@@ -23,8 +23,8 @@ android {
         applicationId = "com.tanniscoring.wear"
         minSdk = 30
         targetSdk = 36
-        versionCode = 4
-        versionName = "0.3.1"
+        versionCode = 6
+        versionName = "0.3.3"
     }
 
 

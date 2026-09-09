@@ -111,7 +111,10 @@ data class MatchState(
  */
 object SyncPaths {
     const val PATH_EVENT = "/tanniscoring/event"
+    /** MessageClient path and Data Layer path for full match state. */
     const val PATH_STATE = "/tanniscoring/state"
+    /** Wear → Phone: ask phone to re-broadcast current state. */
+    const val PATH_REQUEST_STATE = "/tanniscoring/request_state"
 }
 
 object SyncTypes {
@@ -121,6 +124,7 @@ object SyncTypes {
     const val STATE = "STATE"
     const val TOGGLE_SERVER = "TOGGLE_SERVER"
     const val END = "END"
+    const val REQUEST_STATE = "REQUEST_STATE"
 }
 
 /**

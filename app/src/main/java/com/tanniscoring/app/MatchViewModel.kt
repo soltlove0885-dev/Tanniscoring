@@ -31,7 +31,7 @@ import kotlinx.coroutines.launch
 class MatchViewModel(application: Application) : AndroidViewModel(application) {
 
     private val engine = TennisScoringEngine()
-    private val sync = WearSyncManager(application.applicationContext)
+    private val sync = WearSyncManager.get(application.applicationContext)
     private val repo = MatchRepository(application.applicationContext)
 
     private val _uiState = MutableStateFlow(MatchUiState(history = repo.loadHistory()))
@@ -39,6 +39,7 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
 
     private var sequence = 0L
     private var lastPersistedFinishedFingerprint: String? = null
+    private var wasWearConnected = false
 
     init {
         restoreIfNeeded()
@@ -48,8 +49,18 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
         viewModelScope.launch {
+            sync.stateRequests.collect {
+                pushCurrentStateToWear()
+            }
+        }
+        viewModelScope.launch {
             sync.wearConnected.collect { connected ->
                 _uiState.update { it.copy(wearConnected = connected) }
+                if (connected && !wasWearConnected) {
+                    // Wear just became reachable — push again so idle watch catches up.
+                    pushCurrentStateToWear()
+                }
+                wasWearConnected = connected
             }
         }
         viewModelScope.launch {
@@ -59,9 +70,7 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
         }
         sync.startListening()
         // Push current state so Wear can catch up after process death / reconnect.
-        _uiState.value.matchState?.let { state ->
-            viewModelScope.launch { sync.sendState(state.toDto()) }
-        }
+        pushCurrentStateToWear()
     }
 
     fun setDraftPlayerA(name: String) = _uiState.update { it.copy(draftPlayerA = name) }
@@ -137,6 +146,19 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private fun pushCurrentStateToWear() {
+        viewModelScope.launch {
+            val state = _uiState.value.matchState
+            if (state != null) {
+                sync.sendState(state.toDto())
+            } else {
+                sync.sendState(
+                    MatchStateDto(matchActive = false, pointDisplayA = "-", pointDisplayB = "-"),
+                )
+            }
+        }
+    }
+
     private fun restoreIfNeeded() {
         val saved = repo.loadCurrentMatch() ?: return
         val state = engine.restoreFrom(saved)
@@ -191,6 +213,7 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 publish(state, matchStarted = true)
             }
+            SyncTypes.REQUEST_STATE -> pushCurrentStateToWear()
         }
     }
 
