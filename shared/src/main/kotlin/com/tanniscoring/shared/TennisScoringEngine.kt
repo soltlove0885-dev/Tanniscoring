@@ -9,7 +9,10 @@ package com.tanniscoring.shared
  * - Game: win by 2 from deuce, or from 40 when opponent below 40
  * - Set: first to 6 games with 2-game lead; at 6-6 → tiebreak to 7 (win by 2)
  * - Match: best-of-3 or best-of-5 via [MatchFormat]
- * - Server: changes after each completed game (including tiebreak as one game)
+ * - Server: changes after each completed game
+ * - Tiebreak server: first point by the player due to serve; then switch after
+ *   the 1st point and every 2 points thereafter (after odd totals: 1, 3, 5, …).
+ *   After the tiebreak, the player who received the first TB point serves next.
  *
  * Undo restores the previous snapshot (stack-based).
  */
@@ -31,6 +34,8 @@ class TennisScoringEngine {
     private var matchOver: Boolean = false
     private var winner: Side? = null
     private var server: Side = Side.A
+    /** Side that served (or will serve) the first point of the current tiebreak. */
+    private var tiebreakInitialServer: Side = Side.A
     private var matchActive: Boolean = false
 
     private val history: ArrayDeque<Snapshot> = ArrayDeque()
@@ -56,6 +61,7 @@ class TennisScoringEngine {
         matchOver = false
         winner = null
         server = initialServer
+        tiebreakInitialServer = initialServer
         matchActive = true
         history.clear()
         return snapshot()
@@ -83,6 +89,10 @@ class TennisScoringEngine {
         if (!matchActive || matchOver) return snapshot()
         pushHistory()
         server = if (server == Side.A) Side.B else Side.A
+        // If toggling before any TB points, treat as changing who opens the TB.
+        if (inTiebreak && pointsA == 0 && pointsB == 0) {
+            tiebreakInitialServer = server
+        }
         return snapshot()
     }
 
@@ -124,6 +134,11 @@ class TennisScoringEngine {
         winner = state.winner
         server = state.server
         matchActive = state.matchActive
+        tiebreakInitialServer = if (state.isTiebreak) {
+            inferTiebreakInitialServer(state.pointsA + state.pointsB, state.server)
+        } else {
+            state.server
+        }
         history.clear()
         return snapshot()
     }
@@ -159,8 +174,12 @@ class TennisScoringEngine {
         if (side == Side.A) pointsA++ else pointsB++
         val a = pointsA
         val b = pointsB
+        val total = a + b
         if ((a >= 7 || b >= 7) && kotlin.math.abs(a - b) >= 2) {
             if (a > b) winGame(Side.A) else winGame(Side.B)
+        } else if (total % 2 == 1) {
+            // After 1st, 3rd, 5th… point: switch server for the next point(s).
+            rotateServer()
         }
     }
 
@@ -172,8 +191,12 @@ class TennisScoringEngine {
         val wasTiebreak = inTiebreak
         inTiebreak = false
 
-        // Standard tennis: server changes after every game (tiebreak counts as one game).
-        rotateServer()
+        if (wasTiebreak) {
+            // Receiver of the first TB point serves the next game/set.
+            server = opposite(tiebreakInitialServer)
+        } else {
+            rotateServer()
+        }
 
         val ga = gamesA
         val gb = gamesB
@@ -182,8 +205,11 @@ class TennisScoringEngine {
             // Just finished tiebreak (7-6)
             wasTiebreak && ga == 7 && gb == 6 -> winSet(Side.A)
             wasTiebreak && gb == 7 && ga == 6 -> winSet(Side.B)
-            // Reach 6-6 → next points are tiebreak
-            ga == 6 && gb == 6 -> inTiebreak = true
+            // Reach 6-6 → next points are tiebreak; current server (post-game rotate) opens TB
+            ga == 6 && gb == 6 -> {
+                inTiebreak = true
+                tiebreakInitialServer = server
+            }
             // Normal set win
             ga >= 6 && ga - gb >= 2 -> winSet(Side.A)
             gb >= 6 && gb - ga >= 2 -> winSet(Side.B)
@@ -191,7 +217,18 @@ class TennisScoringEngine {
     }
 
     private fun rotateServer() {
-        server = if (server == Side.A) Side.B else Side.A
+        server = opposite(server)
+    }
+
+    private fun opposite(side: Side): Side = if (side == Side.A) Side.B else Side.A
+
+    /**
+     * After [pointsPlayed] TB points with [currentServer] about to serve (or last set),
+     * recover who served point 1. Switches occur after odd totals → switch count = (n+1)/2.
+     */
+    private fun inferTiebreakInitialServer(pointsPlayed: Int, currentServer: Side): Side {
+        val switches = (pointsPlayed + 1) / 2
+        return if (switches % 2 == 0) currentServer else opposite(currentServer)
     }
 
     private fun winSet(side: Side) {
@@ -228,6 +265,7 @@ class TennisScoringEngine {
         val matchOver: Boolean,
         val winner: Side?,
         val server: Side,
+        val tiebreakInitialServer: Side,
         val matchActive: Boolean,
     )
 
@@ -236,7 +274,8 @@ class TennisScoringEngine {
             Snapshot(
                 playerA, playerB, format, mode,
                 setsA, setsB, gamesA, gamesB, pointsA, pointsB,
-                setHistory.toList(), inTiebreak, matchOver, winner, server, matchActive,
+                setHistory.toList(), inTiebreak, matchOver, winner, server,
+                tiebreakInitialServer, matchActive,
             )
         )
     }
@@ -257,6 +296,7 @@ class TennisScoringEngine {
         matchOver = s.matchOver
         winner = s.winner
         server = s.server
+        tiebreakInitialServer = s.tiebreakInitialServer
         matchActive = s.matchActive
     }
 

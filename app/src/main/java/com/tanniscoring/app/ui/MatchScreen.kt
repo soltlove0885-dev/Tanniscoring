@@ -151,7 +151,9 @@ fun MatchScreen(
                 }
                 match.isTiebreak -> Text(
                     stringResource(R.string.tiebreak),
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.tertiary,
                 )
                 match.isDeuce -> Text(
                     stringResource(R.string.deuce),

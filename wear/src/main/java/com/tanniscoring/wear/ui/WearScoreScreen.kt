@@ -2,6 +2,8 @@ package com.tanniscoring.wear.ui
 
 import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,12 +34,14 @@ import com.tanniscoring.shared.Side
 import com.tanniscoring.wear.R
 import com.tanniscoring.wear.WearUiState
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun WearScoreScreen(
     state: WearUiState,
     onPointA: () -> Unit,
     onPointB: () -> Unit,
     onUndo: () -> Unit,
+    onToggleServer: () -> Unit = {},
 ) {
     val view = LocalView.current
     fun hapticPoint() {
@@ -83,7 +87,17 @@ fun WearScoreScreen(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(
-                    Modifier.fillMaxWidth(),
+                    Modifier
+                        .fillMaxWidth()
+                        .combinedClickable(
+                            onClick = {},
+                            onLongClick = {
+                                if (!match!!.isMatchOver) {
+                                    view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                                    onToggleServer()
+                                }
+                            },
+                        ),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                 ) {
                     PlayerMini(
@@ -112,9 +126,22 @@ fun WearScoreScreen(
                 }
                 Text(
                     text = status,
-                    style = MaterialTheme.typography.caption2,
+                    style = MaterialTheme.typography.caption1,
+                    fontWeight = if (match.isTiebreak) FontWeight.Bold else FontWeight.Normal,
+                    color = if (match.isTiebreak) {
+                        MaterialTheme.colors.secondary
+                    } else {
+                        MaterialTheme.colors.onSurface
+                    },
                     modifier = Modifier.padding(top = 2.dp),
                 )
+                if (match.isTiebreak && !match.isMatchOver) {
+                    Text(
+                        text = stringResource(R.string.tiebreak_full),
+                        style = MaterialTheme.typography.caption3,
+                        color = MaterialTheme.colors.onSurface.copy(alpha = 0.75f),
+                    )
+                }
             }
 
             PointButtons(
@@ -129,6 +156,10 @@ fun WearScoreScreen(
                 onUndo = {
                     view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
                     onUndo()
+                },
+                onToggleServer = {
+                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    onToggleServer()
                 },
                 enabled = !match.isMatchOver,
             )
@@ -179,6 +210,7 @@ private fun PointButtons(
     onPointA: () -> Unit,
     onPointB: () -> Unit,
     onUndo: () -> Unit,
+    onToggleServer: () -> Unit,
     enabled: Boolean,
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -186,34 +218,45 @@ private fun PointButtons(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Larger hit targets for on-court use
             Button(
                 onClick = onPointA,
                 enabled = enabled,
-                modifier = Modifier.size(72.dp),
+                modifier = Modifier.size(68.dp),
                 shape = CircleShape,
             ) {
-                Text(stringResource(R.string.point_a), fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.point_a), fontSize = 22.sp, fontWeight = FontWeight.Bold)
             }
             Button(
                 onClick = onPointB,
                 enabled = enabled,
-                modifier = Modifier.size(72.dp),
+                modifier = Modifier.size(68.dp),
                 shape = CircleShape,
                 colors = ButtonDefaults.primaryButtonColors(
                     backgroundColor = MaterialTheme.colors.secondary,
                 ),
             ) {
-                Text(stringResource(R.string.point_b), fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.point_b), fontSize = 22.sp, fontWeight = FontWeight.Bold)
             }
         }
         Spacer(Modifier.height(2.dp))
-        CompactButton(
-            onClick = onUndo,
-            enabled = enabled,
-            modifier = Modifier.size(width = 88.dp, height = 40.dp),
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(stringResource(R.string.undo), style = MaterialTheme.typography.caption1)
+            CompactButton(
+                onClick = onUndo,
+                enabled = enabled,
+                modifier = Modifier.size(width = 72.dp, height = 36.dp),
+            ) {
+                Text(stringResource(R.string.undo), style = MaterialTheme.typography.caption2)
+            }
+            CompactButton(
+                onClick = onToggleServer,
+                enabled = enabled,
+                modifier = Modifier.size(width = 56.dp, height = 36.dp),
+            ) {
+                Text(stringResource(R.string.toggle_server), style = MaterialTheme.typography.caption2)
+            }
         }
     }
 }

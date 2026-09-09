@@ -80,7 +80,7 @@ data class MatchState(
     val isMatchOver: Boolean,
     val winner: Side?,
     val setHistory: List<SetScore>,
-    /** Side currently serving. Changes after each game (including tiebreak). */
+    /** Side currently serving. Rotates after each game; during tiebreak after odd points. */
     val server: Side = Side.A,
     /** True while a match is loaded on the phone (in progress or finished view). */
     val matchActive: Boolean = true,

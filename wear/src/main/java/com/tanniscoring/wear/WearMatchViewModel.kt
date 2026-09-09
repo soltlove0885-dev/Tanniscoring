@@ -37,6 +37,7 @@ class WearMatchViewModel(application: Application) : AndroidViewModel(applicatio
     fun sendPointA() = sendEvent(ScoringEventDto(type = SyncTypes.POINT, side = "A", sequence = nextSeq()))
     fun sendPointB() = sendEvent(ScoringEventDto(type = SyncTypes.POINT, side = "B", sequence = nextSeq()))
     fun sendUndo() = sendEvent(ScoringEventDto(type = SyncTypes.UNDO, sequence = nextSeq()))
+    fun sendToggleServer() = sendEvent(ScoringEventDto(type = SyncTypes.TOGGLE_SERVER, sequence = nextSeq()))
 
     private fun sendEvent(event: ScoringEventDto) {
         viewModelScope.launch { sync.sendEvent(event) }

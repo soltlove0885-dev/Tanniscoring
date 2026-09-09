@@ -281,4 +281,114 @@ class TennisScoringEngineTest {
         assertEquals(3, decoded[0].setHistory.size)
         assertEquals(6, decoded[0].setHistory[0].gamesA)
     }
+
+    @Test
+    fun `tiebreak starts at 6-6 with due server opening`() {
+        fun winGame(side: Side) = repeat(4) { engine.pointWon(side) }
+        // Games alternate; start server A.
+        // After 12 games (6-6): 12 rotations → server back to A for first TB point.
+        repeat(6) {
+            winGame(Side.A)
+            winGame(Side.B)
+        }
+        val s = engine.currentState()
+        assertTrue(s.isTiebreak)
+        assertEquals(6, s.gamesA)
+        assertEquals(6, s.gamesB)
+        assertEquals(Side.A, s.server)
+    }
+
+    @Test
+    fun `tiebreak server rotates after 1st then every 2 points`() {
+        fun winGame(side: Side) = repeat(4) { engine.pointWon(side) }
+        repeat(6) {
+            winGame(Side.A)
+            winGame(Side.B)
+        }
+        assertTrue(engine.currentState().isTiebreak)
+        assertEquals(Side.A, engine.currentState().server) // point 1: A
+
+        engine.pointWon(Side.A) // 1-0, switch
+        assertEquals(Side.B, engine.currentState().server) // points 2-3: B
+        engine.pointWon(Side.B) // 1-1, no switch
+        assertEquals(Side.B, engine.currentState().server)
+        engine.pointWon(Side.B) // 1-2, switch
+        assertEquals(Side.A, engine.currentState().server) // points 4-5: A
+        engine.pointWon(Side.A) // 2-2
+        assertEquals(Side.A, engine.currentState().server)
+        engine.pointWon(Side.A) // 3-2, switch
+        assertEquals(Side.B, engine.currentState().server) // points 6-7: B
+    }
+
+    @Test
+    fun `after tiebreak receiver of first point serves next set`() {
+        fun winGame(side: Side) = repeat(4) { engine.pointWon(side) }
+        repeat(6) {
+            winGame(Side.A)
+            winGame(Side.B)
+        }
+        // A opens TB; B is receiver of first point → B should serve first game of next set.
+        assertEquals(Side.A, engine.currentState().server)
+        // A wins TB 7-0
+        repeat(7) { engine.pointWon(Side.A) }
+        val s = engine.currentState()
+        assertFalse(s.isTiebreak)
+        assertEquals(1, s.setsA)
+        assertEquals(0, s.gamesA)
+        assertEquals(0, s.gamesB)
+        assertEquals(Side.B, s.server)
+    }
+
+    @Test
+    fun `after long tiebreak next set server is still TB first receiver`() {
+        fun winGame(side: Side) = repeat(4) { engine.pointWon(side) }
+        repeat(6) {
+            winGame(Side.A)
+            winGame(Side.B)
+        }
+        // Reach 6-6 then TB to 8-6 (14 points). First server A → next set server B.
+        repeat(6) {
+            engine.pointWon(Side.A)
+            engine.pointWon(Side.B)
+        }
+        assertEquals(6, engine.currentState().pointsA)
+        assertEquals(6, engine.currentState().pointsB)
+        engine.pointWon(Side.A) // 7-6
+        engine.pointWon(Side.A) // 8-6 win
+        val s = engine.currentState()
+        assertEquals(1, s.setsA)
+        assertEquals(Side.B, s.server)
+    }
+
+    @Test
+    fun `undo restores tiebreak server sequence`() {
+        fun winGame(side: Side) = repeat(4) { engine.pointWon(side) }
+        repeat(6) {
+            winGame(Side.A)
+            winGame(Side.B)
+        }
+        engine.pointWon(Side.A) // 1-0, server → B
+        assertEquals(Side.B, engine.currentState().server)
+        engine.undo()
+        assertEquals(0, engine.currentState().pointsA)
+        assertEquals(Side.A, engine.currentState().server)
+        assertTrue(engine.currentState().isTiebreak)
+    }
+
+    @Test
+    fun `restoreFrom mid-tiebreak preserves subsequent rotation`() {
+        fun winGame(side: Side) = repeat(4) { engine.pointWon(side) }
+        repeat(6) {
+            winGame(Side.A)
+            winGame(Side.B)
+        }
+        engine.pointWon(Side.A) // 1-0, server B
+        engine.pointWon(Side.B) // 1-1, server B
+        val mid = engine.currentState()
+        val other = TennisScoringEngine()
+        other.restoreFrom(mid)
+        assertEquals(Side.B, other.currentState().server)
+        other.pointWon(Side.A) // 2-1 total 3, switch → A
+        assertEquals(Side.A, other.currentState().server)
+    }
 }

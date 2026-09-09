@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Court green background circle -->
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M54,10c24.3,0 44,19.7 44,44s-19.7,44 -44,44 -44,-19.7 -44,-44 19.7,-44 44,-44z" />
+    <!-- Ball body -->
+    <path
+        android:fillColor="#C6FF00"
+        android:pathData="M54,26c15.5,0 28,12.5 28,28s-12.5,28 -28,28 -28,-12.5 -28,-28 12.5,-28 28,-28z" />
+    <!-- Seam curves -->
+    <path
+        android:pathData="M38,34c8,10 8,30 0,40"
+        android:strokeWidth="3.5"
+        android:strokeColor="#1B5E20"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M70,34c-8,10 -8,30 0,40"
+        android:strokeWidth="3.5"
+        android:strokeColor="#1B5E20"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round" />
+</vector>

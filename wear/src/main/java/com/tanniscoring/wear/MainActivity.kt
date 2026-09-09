@@ -23,6 +23,7 @@ class MainActivity : ComponentActivity() {
                     onPointA = { viewModel.sendPointA() },
                     onPointB = { viewModel.sendPointB() },
                     onUndo = { viewModel.sendUndo() },
+                    onToggleServer = { viewModel.sendToggleServer() },
                 )
             }
         }

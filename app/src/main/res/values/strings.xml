@@ -24,7 +24,7 @@
     <string name="winner_fmt">승자: %1$s</string>
     <string name="deuce">듀스</string>
     <string name="advantage">어드밴티지</string>
-    <string name="tiebreak">타이브레이크</string>
+    <string name="tiebreak">TB · 타이브레이크</string>
     <string name="set_history">세트 기록</string>
     <string name="server_fmt">서브: %1$s</string>
     <string name="tap_to_toggle_server">탭하여 서버 변경</string>
