@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">테니스</string>
+    <string name="point_a">A</string>
+    <string name="point_b">B</string>
+    <string name="undo">되돌리기</string>
+    <string name="waiting">폰에서 경기를 시작하세요</string>
+    <string name="deuce">듀스</string>
+    <string name="tiebreak">TB</string>
+    <string name="match_over">종료</string>
+</resources>

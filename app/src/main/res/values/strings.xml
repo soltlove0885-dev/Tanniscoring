@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">테니스코어링</string>
+    <string name="start_match">경기 시작</string>
+    <string name="player_a">선수 A</string>
+    <string name="player_b">선수 B</string>
+    <string name="best_of">경기 형식</string>
+    <string name="best_of_3">3판 2선승</string>
+    <string name="best_of_5">5판 3선승</string>
+    <string name="sets">세트</string>
+    <string name="games">게임</string>
+    <string name="points">포인트</string>
+    <string name="point_a">A 득점</string>
+    <string name="point_b">B 득점</string>
+    <string name="undo">되돌리기</string>
+    <string name="new_match">새 경기</string>
+    <string name="match_over">경기 종료</string>
+    <string name="winner_fmt">승자: %1$s</string>
+    <string name="deuce">듀스</string>
+    <string name="advantage">어드밴티지</string>
+    <string name="tiebreak">타이브레이크</string>
+    <string name="sync_hint">워치와 페어링되면 점수가 실시간 동기화됩니다</string>
+    <string name="wear_connected">워치 연결됨</string>
+    <string name="wear_disconnected">워치 미연결 (폰만으로 채점 가능)</string>
+</resources>
