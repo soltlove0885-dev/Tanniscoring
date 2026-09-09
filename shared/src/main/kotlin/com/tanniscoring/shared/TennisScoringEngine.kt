@@ -9,6 +9,7 @@ package com.tanniscoring.shared
  * - Game: win by 2 from deuce, or from 40 when opponent below 40
  * - Set: first to 6 games with 2-game lead; at 6-6 → tiebreak to 7 (win by 2)
  * - Match: best-of-3 or best-of-5 via [MatchFormat]
+ * - Server: changes after each completed game (including tiebreak as one game)
  *
  * Undo restores the previous snapshot (stack-based).
  */
@@ -17,6 +18,7 @@ class TennisScoringEngine {
     private var playerA: String = "선수 A"
     private var playerB: String = "선수 B"
     private var format: MatchFormat = MatchFormat.BEST_OF_3
+    private var mode: MatchMode = MatchMode.SINGLES
 
     private var setsA: Int = 0
     private var setsB: Int = 0
@@ -28,16 +30,21 @@ class TennisScoringEngine {
     private var inTiebreak: Boolean = false
     private var matchOver: Boolean = false
     private var winner: Side? = null
+    private var server: Side = Side.A
+    private var matchActive: Boolean = false
 
     private val history: ArrayDeque<Snapshot> = ArrayDeque()
 
     fun startMatch(
         names: PlayerNames = PlayerNames(),
         format: MatchFormat = MatchFormat.BEST_OF_3,
+        mode: MatchMode = MatchMode.SINGLES,
+        initialServer: Side = Side.A,
     ): MatchState {
-        this.playerA = names.playerA.ifBlank { "선수 A" }
-        this.playerB = names.playerB.ifBlank { "선수 B" }
+        this.playerA = names.playerA.ifBlank { if (mode == MatchMode.DOUBLES) "팀 A" else "선수 A" }
+        this.playerB = names.playerB.ifBlank { if (mode == MatchMode.DOUBLES) "팀 B" else "선수 B" }
         this.format = format
+        this.mode = mode
         setsA = 0
         setsB = 0
         gamesA = 0
@@ -48,12 +55,14 @@ class TennisScoringEngine {
         inTiebreak = false
         matchOver = false
         winner = null
+        server = initialServer
+        matchActive = true
         history.clear()
         return snapshot()
     }
 
     fun pointWon(side: Side): MatchState {
-        if (matchOver) return snapshot()
+        if (!matchActive || matchOver) return snapshot()
         pushHistory()
         if (inTiebreak) {
             applyTiebreakPoint(side)
@@ -67,6 +76,55 @@ class TennisScoringEngine {
         if (history.isEmpty()) return snapshot()
         val prev = history.removeLast()
         restore(prev)
+        return snapshot()
+    }
+
+    fun toggleServer(): MatchState {
+        if (!matchActive || matchOver) return snapshot()
+        pushHistory()
+        server = if (server == Side.A) Side.B else Side.A
+        return snapshot()
+    }
+
+    /** Manually end the match without declaring a winner (unless already decided). */
+    fun endMatch(): MatchState {
+        if (!matchActive) return snapshot()
+        if (!matchOver) {
+            pushHistory()
+            matchOver = true
+        }
+        return snapshot()
+    }
+
+    fun clearMatch(): MatchState {
+        matchActive = false
+        matchOver = false
+        winner = null
+        history.clear()
+        return snapshot().copy(matchActive = false)
+    }
+
+    /**
+     * Restore from a persisted [MatchState]. Undo stack is cleared.
+     */
+    fun restoreFrom(state: MatchState): MatchState {
+        playerA = state.playerA
+        playerB = state.playerB
+        format = state.format
+        mode = state.mode
+        setsA = state.setsA
+        setsB = state.setsB
+        gamesA = state.gamesA
+        gamesB = state.gamesB
+        pointsA = state.pointsA
+        pointsB = state.pointsB
+        setHistory = state.setHistory.toMutableList()
+        inTiebreak = state.isTiebreak
+        matchOver = state.isMatchOver
+        winner = state.winner
+        server = state.server
+        matchActive = state.matchActive
+        history.clear()
         return snapshot()
     }
 
@@ -114,6 +172,9 @@ class TennisScoringEngine {
         val wasTiebreak = inTiebreak
         inTiebreak = false
 
+        // Standard tennis: server changes after every game (tiebreak counts as one game).
+        rotateServer()
+
         val ga = gamesA
         val gb = gamesB
 
@@ -127,6 +188,10 @@ class TennisScoringEngine {
             ga >= 6 && ga - gb >= 2 -> winSet(Side.A)
             gb >= 6 && gb - ga >= 2 -> winSet(Side.B)
         }
+    }
+
+    private fun rotateServer() {
+        server = if (server == Side.A) Side.B else Side.A
     }
 
     private fun winSet(side: Side) {
@@ -151,6 +216,7 @@ class TennisScoringEngine {
         val playerA: String,
         val playerB: String,
         val format: MatchFormat,
+        val mode: MatchMode,
         val setsA: Int,
         val setsB: Int,
         val gamesA: Int,
@@ -161,14 +227,16 @@ class TennisScoringEngine {
         val inTiebreak: Boolean,
         val matchOver: Boolean,
         val winner: Side?,
+        val server: Side,
+        val matchActive: Boolean,
     )
 
     private fun pushHistory() {
         history.addLast(
             Snapshot(
-                playerA, playerB, format,
+                playerA, playerB, format, mode,
                 setsA, setsB, gamesA, gamesB, pointsA, pointsB,
-                setHistory.toList(), inTiebreak, matchOver, winner,
+                setHistory.toList(), inTiebreak, matchOver, winner, server, matchActive,
             )
         )
     }
@@ -177,6 +245,7 @@ class TennisScoringEngine {
         playerA = s.playerA
         playerB = s.playerB
         format = s.format
+        mode = s.mode
         setsA = s.setsA
         setsB = s.setsB
         gamesA = s.gamesA
@@ -187,6 +256,8 @@ class TennisScoringEngine {
         inTiebreak = s.inTiebreak
         matchOver = s.matchOver
         winner = s.winner
+        server = s.server
+        matchActive = s.matchActive
     }
 
     private fun snapshot(): MatchState {
@@ -197,6 +268,7 @@ class TennisScoringEngine {
             playerA = playerA,
             playerB = playerB,
             format = format,
+            mode = mode,
             setsA = setsA,
             setsB = setsB,
             gamesA = gamesA,
@@ -210,6 +282,8 @@ class TennisScoringEngine {
             isMatchOver = matchOver,
             winner = winner,
             setHistory = setHistory.toList(),
+            server = server,
+            matchActive = matchActive,
         )
     }
 }

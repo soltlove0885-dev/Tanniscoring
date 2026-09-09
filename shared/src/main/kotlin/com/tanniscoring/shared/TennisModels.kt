@@ -36,6 +36,16 @@ enum class MatchFormat(val bestOf: Int) {
     }
 }
 
+enum class MatchMode {
+    SINGLES,
+    DOUBLES;
+
+    companion object {
+        fun fromName(name: String?): MatchMode =
+            if (name.equals("DOUBLES", ignoreCase = true)) DOUBLES else SINGLES
+    }
+}
+
 data class PlayerNames(
     val playerA: String = "선수 A",
     val playerB: String = "선수 B",
@@ -55,6 +65,7 @@ data class MatchState(
     val playerA: String,
     val playerB: String,
     val format: MatchFormat,
+    val mode: MatchMode = MatchMode.SINGLES,
     val setsA: Int,
     val setsB: Int,
     val gamesA: Int,
@@ -69,9 +80,14 @@ data class MatchState(
     val isMatchOver: Boolean,
     val winner: Side?,
     val setHistory: List<SetScore>,
+    /** Side currently serving. Changes after each game (including tiebreak). */
+    val server: Side = Side.A,
+    /** True while a match is loaded on the phone (in progress or finished view). */
+    val matchActive: Boolean = true,
 ) {
     val pointDisplayA: String get() = displayPoint(Side.A)
     val pointDisplayB: String get() = displayPoint(Side.B)
+    val isDoubles: Boolean get() = mode == MatchMode.DOUBLES
 
     private fun displayPoint(side: Side): String {
         if (isMatchOver) return "-"
@@ -103,6 +119,8 @@ object SyncTypes {
     const val UNDO = "UNDO"
     const val START = "START"
     const val STATE = "STATE"
+    const val TOGGLE_SERVER = "TOGGLE_SERVER"
+    const val END = "END"
 }
 
 /**
@@ -112,6 +130,7 @@ data class MatchStateDto(
     val playerA: String = "",
     val playerB: String = "",
     val bestOf: Int = 3,
+    val mode: String = MatchMode.SINGLES.name,
     val setsA: Int = 0,
     val setsB: Int = 0,
     val gamesA: Int = 0,
@@ -127,6 +146,8 @@ data class MatchStateDto(
     val setHistory: List<SetScoreDto> = emptyList(),
     val pointDisplayA: String = "0",
     val pointDisplayB: String = "0",
+    val server: String = Side.A.name,
+    val matchActive: Boolean = true,
 )
 
 data class SetScoreDto(
@@ -143,13 +164,32 @@ data class ScoringEventDto(
     val playerA: String? = null,
     val playerB: String? = null,
     val bestOf: Int? = null,
+    val mode: String? = null,
+    val server: String? = null,
     val sequence: Long = 0L,
+)
+
+/**
+ * Compact finished-match record for local history.
+ */
+data class MatchHistoryEntry(
+    val id: String,
+    val finishedAtEpochMs: Long,
+    val playerA: String,
+    val playerB: String,
+    val bestOf: Int,
+    val mode: String,
+    val setsA: Int,
+    val setsB: Int,
+    val winner: String?,
+    val setHistory: List<SetScoreDto>,
 )
 
 fun MatchState.toDto(): MatchStateDto = MatchStateDto(
     playerA = playerA,
     playerB = playerB,
     bestOf = format.bestOf,
+    mode = mode.name,
     setsA = setsA,
     setsB = setsB,
     gamesA = gamesA,
@@ -165,12 +205,15 @@ fun MatchState.toDto(): MatchStateDto = MatchStateDto(
     setHistory = setHistory.map { SetScoreDto(it.gamesA, it.gamesB) },
     pointDisplayA = pointDisplayA,
     pointDisplayB = pointDisplayB,
+    server = server.name,
+    matchActive = matchActive,
 )
 
 fun MatchStateDto.toMatchState(): MatchState = MatchState(
     playerA = playerA,
     playerB = playerB,
     format = MatchFormat.fromBestOf(bestOf),
+    mode = MatchMode.fromName(mode),
     setsA = setsA,
     setsB = setsB,
     gamesA = gamesA,
@@ -184,4 +227,20 @@ fun MatchStateDto.toMatchState(): MatchState = MatchState(
     isMatchOver = isMatchOver,
     winner = winner?.let { runCatching { Side.valueOf(it) }.getOrNull() },
     setHistory = setHistory.map { SetScore(it.gamesA, it.gamesB) },
+    server = server.let { runCatching { Side.valueOf(it) }.getOrDefault(Side.A) },
+    matchActive = matchActive,
 )
+
+fun MatchState.toHistoryEntry(id: String, finishedAtEpochMs: Long): MatchHistoryEntry =
+    MatchHistoryEntry(
+        id = id,
+        finishedAtEpochMs = finishedAtEpochMs,
+        playerA = playerA,
+        playerB = playerB,
+        bestOf = format.bestOf,
+        mode = mode.name,
+        setsA = setsA,
+        setsB = setsB,
+        winner = winner?.name,
+        setHistory = setHistory.map { SetScoreDto(it.gamesA, it.gamesB) },
+    )

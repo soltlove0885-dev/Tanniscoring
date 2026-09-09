@@ -1,5 +1,6 @@
 package com.tanniscoring.wear.ui
 
+import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -26,6 +28,7 @@ import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.CompactButton
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
+import com.tanniscoring.shared.Side
 import com.tanniscoring.wear.R
 import com.tanniscoring.wear.WearUiState
 
@@ -36,26 +39,39 @@ fun WearScoreScreen(
     onPointB: () -> Unit,
     onUndo: () -> Unit,
 ) {
+    val view = LocalView.current
+    fun hapticPoint() {
+        view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colors.background)
-            .padding(8.dp),
+            .padding(6.dp),
         contentAlignment = Alignment.Center,
     ) {
         val match = state.match
-        if (match == null || !state.hasState) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        val active = state.hasState && match != null && match.matchActive
+
+        if (!active) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(12.dp),
+            ) {
                 Text(
                     text = stringResource(R.string.waiting),
                     textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.body2,
+                    style = MaterialTheme.typography.body1,
+                    fontWeight = FontWeight.Medium,
                     modifier = Modifier.padding(8.dp),
                 )
-                Spacer(Modifier.height(8.dp))
-                // Still allow tapping to send points once phone starts a match —
-                // orphan events are ignored until phone is listening.
-                PointButtons(onPointA, onPointB, onUndo, enabled = true)
+                Text(
+                    text = stringResource(R.string.waiting_hint),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.caption2,
+                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
+                )
             }
             return
         }
@@ -65,30 +81,34 @@ fun WearScoreScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            // Compact scoreboard
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                 ) {
                     PlayerMini(
-                        name = match.playerA,
+                        name = match!!.playerA,
                         sets = match.setsA,
                         games = match.gamesA,
                         points = match.pointDisplayA,
+                        isServing = match.server == Side.A.name && !match.isMatchOver,
                     )
                     PlayerMini(
                         name = match.playerB,
                         sets = match.setsB,
                         games = match.gamesB,
                         points = match.pointDisplayB,
+                        isServing = match.server == Side.B.name && !match.isMatchOver,
                     )
                 }
                 val status = when {
                     match.isMatchOver -> stringResource(R.string.match_over)
                     match.isTiebreak -> stringResource(R.string.tiebreak)
                     match.isDeuce -> stringResource(R.string.deuce)
-                    else -> "${match.setsA}-${match.setsB}  ${match.gamesA}-${match.gamesB}"
+                    else -> stringResource(
+                        R.string.server_short,
+                        if (match.server == Side.A.name) "A" else "B",
+                    )
                 }
                 Text(
                     text = status,
@@ -98,9 +118,18 @@ fun WearScoreScreen(
             }
 
             PointButtons(
-                onPointA = onPointA,
-                onPointB = onPointB,
-                onUndo = onUndo,
+                onPointA = {
+                    hapticPoint()
+                    onPointA()
+                },
+                onPointB = {
+                    hapticPoint()
+                    onPointB()
+                },
+                onUndo = {
+                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    onUndo()
+                },
                 enabled = !match.isMatchOver,
             )
         }
@@ -113,18 +142,29 @@ private fun PlayerMini(
     sets: Int,
     games: Int,
     points: String,
+    isServing: Boolean,
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = name,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.caption1,
-            fontWeight = FontWeight.Bold,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (isServing) {
+                Text(
+                    text = "●",
+                    color = MaterialTheme.colors.secondary,
+                    fontSize = 10.sp,
+                    modifier = Modifier.padding(end = 2.dp),
+                )
+            }
+            Text(
+                text = name,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.caption1,
+                fontWeight = FontWeight.Bold,
+            )
+        }
         Text(
             text = points,
-            fontSize = 28.sp,
+            fontSize = 26.sp,
             fontWeight = FontWeight.Bold,
         )
         Text(
@@ -143,31 +183,37 @@ private fun PointButtons(
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // Larger hit targets for on-court use
             Button(
                 onClick = onPointA,
                 enabled = enabled,
-                modifier = Modifier.size(64.dp),
+                modifier = Modifier.size(72.dp),
                 shape = CircleShape,
             ) {
-                Text(stringResource(R.string.point_a), fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.point_a), fontSize = 24.sp, fontWeight = FontWeight.Bold)
             }
             Button(
                 onClick = onPointB,
                 enabled = enabled,
-                modifier = Modifier.size(64.dp),
+                modifier = Modifier.size(72.dp),
                 shape = CircleShape,
                 colors = ButtonDefaults.primaryButtonColors(
                     backgroundColor = MaterialTheme.colors.secondary,
                 ),
             ) {
-                Text(stringResource(R.string.point_b), fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.point_b), fontSize = 24.sp, fontWeight = FontWeight.Bold)
             }
         }
-        CompactButton(onClick = onUndo, enabled = enabled) {
-            Text(stringResource(R.string.undo), style = MaterialTheme.typography.caption2)
+        Spacer(Modifier.height(2.dp))
+        CompactButton(
+            onClick = onUndo,
+            enabled = enabled,
+            modifier = Modifier.size(width = 88.dp, height = 40.dp),
+        ) {
+            Text(stringResource(R.string.undo), style = MaterialTheme.typography.caption1)
         }
     }
 }

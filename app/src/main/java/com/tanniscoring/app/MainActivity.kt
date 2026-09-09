@@ -35,6 +35,8 @@ class MainActivity : ComponentActivity() {
                             onPointA = { viewModel.pointWonA() },
                             onPointB = { viewModel.pointWonB() },
                             onUndo = { viewModel.undo() },
+                            onToggleServer = { viewModel.toggleServer() },
+                            onEndMatch = { viewModel.endMatch() },
                             onNewMatch = { viewModel.resetToStart() },
                         )
                     } else {
@@ -42,9 +44,12 @@ class MainActivity : ComponentActivity() {
                             playerA = ui.draftPlayerA,
                             playerB = ui.draftPlayerB,
                             bestOf = ui.draftBestOf,
+                            doubles = ui.draftDoubles,
+                            history = ui.history,
                             onPlayerAChange = viewModel::setDraftPlayerA,
                             onPlayerBChange = viewModel::setDraftPlayerB,
                             onBestOfChange = viewModel::setDraftBestOf,
+                            onDoublesChange = viewModel::setDraftDoubles,
                             onStart = { viewModel.startMatch() },
                         )
                     }

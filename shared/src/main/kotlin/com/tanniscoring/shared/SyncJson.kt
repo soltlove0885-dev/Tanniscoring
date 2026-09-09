@@ -13,6 +13,8 @@ object SyncJson {
         event.playerA?.let { append(",\"playerA\":\"").append(escape(it)).append('"') }
         event.playerB?.let { append(",\"playerB\":\"").append(escape(it)).append('"') }
         event.bestOf?.let { append(",\"bestOf\":").append(it) }
+        event.mode?.let { append(",\"mode\":\"").append(escape(it)).append('"') }
+        event.server?.let { append(",\"server\":\"").append(escape(it)).append('"') }
         append(",\"sequence\":").append(event.sequence)
         append('}')
     }
@@ -25,6 +27,8 @@ object SyncJson {
             playerA = map["playerA"],
             playerB = map["playerB"],
             bestOf = map["bestOf"]?.toIntOrNull(),
+            mode = map["mode"],
+            server = map["server"],
             sequence = map["sequence"]?.toLongOrNull() ?: 0L,
         )
     }
@@ -34,6 +38,7 @@ object SyncJson {
         append("\"playerA\":\"").append(escape(dto.playerA)).append('"')
         append(",\"playerB\":\"").append(escape(dto.playerB)).append('"')
         append(",\"bestOf\":").append(dto.bestOf)
+        append(",\"mode\":\"").append(escape(dto.mode)).append('"')
         append(",\"setsA\":").append(dto.setsA)
         append(",\"setsB\":").append(dto.setsB)
         append(",\"gamesA\":").append(dto.gamesA)
@@ -49,6 +54,8 @@ object SyncJson {
         if (dto.winner == null) append("null") else append('"').append(escape(dto.winner)).append('"')
         append(",\"pointDisplayA\":\"").append(escape(dto.pointDisplayA)).append('"')
         append(",\"pointDisplayB\":\"").append(escape(dto.pointDisplayB)).append('"')
+        append(",\"server\":\"").append(escape(dto.server)).append('"')
+        append(",\"matchActive\":").append(dto.matchActive)
         append(",\"setHistory\":[")
         dto.setHistory.forEachIndexed { i, s ->
             if (i > 0) append(',')
@@ -65,6 +72,7 @@ object SyncJson {
             playerA = map["playerA"] ?: "",
             playerB = map["playerB"] ?: "",
             bestOf = map["bestOf"]?.toIntOrNull() ?: 3,
+            mode = map["mode"] ?: MatchMode.SINGLES.name,
             setsA = map["setsA"]?.toIntOrNull() ?: 0,
             setsB = map["setsB"]?.toIntOrNull() ?: 0,
             gamesA = map["gamesA"]?.toIntOrNull() ?: 0,
@@ -80,6 +88,80 @@ object SyncJson {
             setHistory = history,
             pointDisplayA = map["pointDisplayA"] ?: "0",
             pointDisplayB = map["pointDisplayB"] ?: "0",
+            server = map["server"] ?: Side.A.name,
+            matchActive = map["matchActive"]?.let { it == "true" } ?: true,
+        )
+    }
+
+    fun encodeHistoryList(entries: List<MatchHistoryEntry>): String = buildString {
+        append('[')
+        entries.forEachIndexed { i, e ->
+            if (i > 0) append(',')
+            append(encodeHistoryEntry(e))
+        }
+        append(']')
+    }
+
+    fun decodeHistoryList(json: String): List<MatchHistoryEntry> {
+        if (json.isBlank() || json == "[]") return emptyList()
+        val trimmed = json.trim()
+        if (!trimmed.startsWith("[")) return emptyList()
+        val items = mutableListOf<MatchHistoryEntry>()
+        var depth = 0
+        var start = -1
+        for (i in trimmed.indices) {
+            val c = trimmed[i]
+            when (c) {
+                '{' -> {
+                    if (depth == 0) start = i
+                    depth++
+                }
+                '}' -> {
+                    depth--
+                    if (depth == 0 && start >= 0) {
+                        items.add(decodeHistoryEntry(trimmed.substring(start, i + 1)))
+                        start = -1
+                    }
+                }
+            }
+        }
+        return items
+    }
+
+    fun encodeHistoryEntry(e: MatchHistoryEntry): String = buildString {
+        append('{')
+        append("\"id\":\"").append(escape(e.id)).append('"')
+        append(",\"finishedAtEpochMs\":").append(e.finishedAtEpochMs)
+        append(",\"playerA\":\"").append(escape(e.playerA)).append('"')
+        append(",\"playerB\":\"").append(escape(e.playerB)).append('"')
+        append(",\"bestOf\":").append(e.bestOf)
+        append(",\"mode\":\"").append(escape(e.mode)).append('"')
+        append(",\"setsA\":").append(e.setsA)
+        append(",\"setsB\":").append(e.setsB)
+        append(",\"winner\":")
+        if (e.winner == null) append("null") else append('"').append(escape(e.winner)).append('"')
+        append(",\"setHistory\":[")
+        e.setHistory.forEachIndexed { i, s ->
+            if (i > 0) append(',')
+            append("{\"gamesA\":").append(s.gamesA).append(",\"gamesB\":").append(s.gamesB).append('}')
+        }
+        append(']')
+        append('}')
+    }
+
+    fun decodeHistoryEntry(json: String): MatchHistoryEntry {
+        val map = parseObject(json)
+        return MatchHistoryEntry(
+            id = map["id"] ?: "",
+            finishedAtEpochMs = map["finishedAtEpochMs"]?.toLongOrNull() ?: 0L,
+            playerA = map["playerA"] ?: "",
+            playerB = map["playerB"] ?: "",
+            bestOf = map["bestOf"]?.toIntOrNull() ?: 3,
+            mode = map["mode"] ?: MatchMode.SINGLES.name,
+            setsA = map["setsA"]?.toIntOrNull() ?: 0,
+            setsB = map["setsB"]?.toIntOrNull() ?: 0,
+            winner = map["winner"]?.takeIf { it != "null" },
+            setHistory = parseSetHistory(json),
         )
     }
 

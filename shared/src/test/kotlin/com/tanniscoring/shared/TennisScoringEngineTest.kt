@@ -85,12 +85,6 @@ class TennisScoringEngineTest {
 
     @Test
     fun `set win at 6-4`() {
-        // Win 6 games for A (each game = 4 points)
-        repeat(6) {
-            repeat(4) { engine.pointWon(Side.A) }
-        }
-        // B wins 4 games
-        // Wait — we already gave A 6 games; need interleaved. Restart.
         engine.startMatch(PlayerNames("A", "B"), MatchFormat.BEST_OF_3)
         fun winGame(side: Side) = repeat(4) { engine.pointWon(side) }
 
@@ -166,7 +160,79 @@ class TennisScoringEngineTest {
     }
 
     @Test
-    fun `sync json roundtrip`() {
+    fun `server starts on A and rotates after each game`() {
+        assertEquals(Side.A, engine.currentState().server)
+        repeat(4) { engine.pointWon(Side.A) } // game A
+        assertEquals(Side.B, engine.currentState().server)
+        repeat(4) { engine.pointWon(Side.B) } // game B
+        assertEquals(Side.A, engine.currentState().server)
+    }
+
+    @Test
+    fun `toggle server and undo restores server`() {
+        assertEquals(Side.A, engine.currentState().server)
+        engine.toggleServer()
+        assertEquals(Side.B, engine.currentState().server)
+        engine.undo()
+        assertEquals(Side.A, engine.currentState().server)
+    }
+
+    @Test
+    fun `undo after game restores previous server`() {
+        assertEquals(Side.A, engine.currentState().server)
+        repeat(4) { engine.pointWon(Side.A) }
+        assertEquals(Side.B, engine.currentState().server)
+        engine.undo()
+        assertEquals(Side.A, engine.currentState().server)
+        assertEquals(0, engine.currentState().gamesA)
+    }
+
+    @Test
+    fun `doubles mode keeps team names`() {
+        engine.startMatch(
+            PlayerNames("김/박", "이/최"),
+            MatchFormat.BEST_OF_3,
+            MatchMode.DOUBLES,
+        )
+        val s = engine.currentState()
+        assertEquals(MatchMode.DOUBLES, s.mode)
+        assertTrue(s.isDoubles)
+        assertEquals("김/박", s.playerA)
+        assertEquals("이/최", s.playerB)
+    }
+
+    @Test
+    fun `restoreFrom survives snapshot roundtrip`() {
+        engine.pointWon(Side.A)
+        engine.pointWon(Side.A)
+        engine.toggleServer()
+        val saved = engine.currentState()
+        val other = TennisScoringEngine()
+        val restored = other.restoreFrom(saved)
+        assertEquals(saved.pointsA, restored.pointsA)
+        assertEquals(saved.server, restored.server)
+        assertEquals(saved.playerA, restored.playerA)
+        assertEquals(saved.matchActive, restored.matchActive)
+    }
+
+    @Test
+    fun `endMatch marks over without winner if incomplete`() {
+        engine.pointWon(Side.A)
+        engine.endMatch()
+        val s = engine.currentState()
+        assertTrue(s.isMatchOver)
+        assertEquals(null, s.winner)
+        assertTrue(s.matchActive)
+    }
+
+    @Test
+    fun `sync json roundtrip includes server and mode`() {
+        engine.startMatch(
+            PlayerNames("김철수", "이영희"),
+            MatchFormat.BEST_OF_3,
+            MatchMode.DOUBLES,
+            Side.B,
+        )
         engine.pointWon(Side.A)
         engine.pointWon(Side.B)
         val dto = engine.currentState().toDto()
@@ -176,11 +242,43 @@ class TennisScoringEngineTest {
         assertEquals(dto.pointsA, decoded.pointsA)
         assertEquals(dto.pointsB, decoded.pointsB)
         assertEquals(dto.pointDisplayA, decoded.pointDisplayA)
+        assertEquals(Side.B.name, decoded.server)
+        assertEquals(MatchMode.DOUBLES.name, decoded.mode)
+        assertTrue(decoded.matchActive)
 
-        val event = ScoringEventDto(type = SyncTypes.POINT, side = "A", sequence = 1)
+        val event = ScoringEventDto(
+            type = SyncTypes.POINT,
+            side = "A",
+            mode = MatchMode.DOUBLES.name,
+            sequence = 1,
+        )
         val ej = SyncJson.encodeEvent(event)
         val ed = SyncJson.decodeEvent(ej)
         assertEquals(SyncTypes.POINT, ed.type)
         assertEquals("A", ed.side)
+        assertEquals(MatchMode.DOUBLES.name, ed.mode)
+    }
+
+    @Test
+    fun `history json roundtrip`() {
+        val entry = MatchHistoryEntry(
+            id = "abc",
+            finishedAtEpochMs = 1_700_000_000_000L,
+            playerA = "A",
+            playerB = "B",
+            bestOf = 3,
+            mode = MatchMode.SINGLES.name,
+            setsA = 2,
+            setsB = 1,
+            winner = "A",
+            setHistory = listOf(SetScoreDto(6, 4), SetScoreDto(3, 6), SetScoreDto(6, 2)),
+        )
+        val json = SyncJson.encodeHistoryList(listOf(entry))
+        val decoded = SyncJson.decodeHistoryList(json)
+        assertEquals(1, decoded.size)
+        assertEquals(entry.id, decoded[0].id)
+        assertEquals(entry.setsA, decoded[0].setsA)
+        assertEquals(3, decoded[0].setHistory.size)
+        assertEquals(6, decoded[0].setHistory[0].gamesA)
     }
 }

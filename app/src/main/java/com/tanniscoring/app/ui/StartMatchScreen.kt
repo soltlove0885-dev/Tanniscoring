@@ -8,9 +8,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -24,6 +27,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.tanniscoring.app.R
+import com.tanniscoring.shared.MatchHistoryEntry
+import com.tanniscoring.shared.MatchMode
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,9 +39,12 @@ fun StartMatchScreen(
     playerA: String,
     playerB: String,
     bestOf: Int,
+    doubles: Boolean,
+    history: List<MatchHistoryEntry>,
     onPlayerAChange: (String) -> Unit,
     onPlayerBChange: (String) -> Unit,
     onBestOfChange: (Int) -> Unit,
+    onDoublesChange: (Boolean) -> Unit,
     onStart: () -> Unit,
 ) {
     Scaffold(
@@ -45,24 +56,52 @@ fun StartMatchScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(horizontal = 24.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            Spacer(Modifier.height(8.dp))
             Text(
                 text = stringResource(R.string.start_match),
                 style = MaterialTheme.typography.headlineSmall,
             )
+
+            Text(
+                text = stringResource(R.string.match_type),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            BestOfOption(
+                label = stringResource(R.string.singles),
+                selected = !doubles,
+                onClick = { onDoublesChange(false) },
+            )
+            BestOfOption(
+                label = stringResource(R.string.doubles),
+                selected = doubles,
+                onClick = { onDoublesChange(true) },
+            )
+
             OutlinedTextField(
                 value = playerA,
                 onValueChange = onPlayerAChange,
-                label = { Text(stringResource(R.string.player_a)) },
+                label = {
+                    Text(
+                        if (doubles) stringResource(R.string.team_a)
+                        else stringResource(R.string.player_a),
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
             )
             OutlinedTextField(
                 value = playerB,
                 onValueChange = onPlayerBChange,
-                label = { Text(stringResource(R.string.player_b)) },
+                label = {
+                    Text(
+                        if (doubles) stringResource(R.string.team_b)
+                        else stringResource(R.string.player_b),
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
             )
@@ -80,7 +119,7 @@ fun StartMatchScreen(
                 selected = bestOf == 5,
                 onClick = { onBestOfChange(5) },
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(4.dp))
             Button(
                 onClick = onStart,
                 modifier = Modifier.fillMaxWidth(),
@@ -92,7 +131,49 @@ fun StartMatchScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+
+            if (history.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                HorizontalDivider()
+                Text(
+                    text = stringResource(R.string.recent_matches),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                history.take(10).forEach { entry ->
+                    HistoryRow(entry)
+                }
+            }
+            Spacer(Modifier.height(24.dp))
         }
+    }
+}
+
+@Composable
+private fun HistoryRow(entry: MatchHistoryEntry) {
+    val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+    val whenText = fmt.format(Date(entry.finishedAtEpochMs))
+    val modeLabel = if (entry.mode == MatchMode.DOUBLES.name) {
+        stringResource(R.string.doubles)
+    } else {
+        stringResource(R.string.singles)
+    }
+    val sets = entry.setHistory.joinToString(" ") { "${it.gamesA}-${it.gamesB}" }
+        .ifBlank { "${entry.setsA}-${entry.setsB}" }
+    val winner = when (entry.winner) {
+        "A" -> entry.playerA
+        "B" -> entry.playerB
+        else -> "-"
+    }
+    Column(modifier = Modifier.padding(vertical = 6.dp)) {
+        Text(
+            text = "${entry.playerA} vs ${entry.playerB}",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Text(
+            text = "$whenText · $modeLabel · $sets · ${stringResource(R.string.winner_fmt, winner)}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
