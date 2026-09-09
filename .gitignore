@@ -22,3 +22,5 @@ out/
 *.keystore
 !debug.keystore
 .kotlin/
+keystore.properties
+*.jks
