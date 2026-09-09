@@ -45,6 +45,7 @@ fun MatchScreen(
     onToggleServer: () -> Unit,
     onEndMatch: () -> Unit,
     onNewMatch: () -> Unit,
+    onOpenWearCompanion: () -> Unit,
 ) {
     val match = state.matchState ?: return
     Scaffold(
@@ -231,6 +232,39 @@ fun MatchScreen(
             ) {
                 Text(stringResource(R.string.new_match))
             }
+
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = if (state.wearConnected) {
+                    stringResource(R.string.wear_status_paired_hint)
+                } else {
+                    stringResource(R.string.wear_disconnected)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            if (state.wearConnected && state.wearNodeCount > 0) {
+                Text(
+                    text = stringResource(R.string.wear_status_connected_fmt, state.wearNodeCount),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = onOpenWearCompanion,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    if (state.wearConnected) {
+                        stringResource(R.string.wear_open_or_install_app)
+                    } else {
+                        stringResource(R.string.wear_install_app)
+                    },
+                )
+            }
+
             Spacer(Modifier.height(16.dp))
         }
     }

@@ -38,6 +38,7 @@ class MainActivity : ComponentActivity() {
                             onToggleServer = { viewModel.toggleServer() },
                             onEndMatch = { viewModel.endMatch() },
                             onNewMatch = { viewModel.resetToStart() },
+                            onOpenWearCompanion = { viewModel.openWearCompanionApp(this@MainActivity) },
                         )
                     } else {
                         StartMatchScreen(
@@ -46,11 +47,14 @@ class MainActivity : ComponentActivity() {
                             bestOf = ui.draftBestOf,
                             doubles = ui.draftDoubles,
                             history = ui.history,
+                            wearConnected = ui.wearConnected,
+                            wearNodeCount = ui.wearNodeCount,
                             onPlayerAChange = viewModel::setDraftPlayerA,
                             onPlayerBChange = viewModel::setDraftPlayerB,
                             onBestOfChange = viewModel::setDraftBestOf,
                             onDoublesChange = viewModel::setDraftDoubles,
                             onStart = { viewModel.startMatch() },
+                            onOpenWearCompanion = { viewModel.openWearCompanionApp(this@MainActivity) },
                         )
                     }
                 }

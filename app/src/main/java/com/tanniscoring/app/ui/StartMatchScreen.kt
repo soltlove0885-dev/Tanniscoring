@@ -12,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -41,11 +42,14 @@ fun StartMatchScreen(
     bestOf: Int,
     doubles: Boolean,
     history: List<MatchHistoryEntry>,
+    wearConnected: Boolean = false,
+    wearNodeCount: Int = 0,
     onPlayerAChange: (String) -> Unit,
     onPlayerBChange: (String) -> Unit,
     onBestOfChange: (Int) -> Unit,
     onDoublesChange: (Boolean) -> Unit,
     onStart: () -> Unit,
+    onOpenWearCompanion: () -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -131,6 +135,34 @@ fun StartMatchScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            Text(
+                text = if (wearConnected) {
+                    stringResource(R.string.wear_status_paired_hint)
+                } else {
+                    stringResource(R.string.wear_disconnected)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (wearConnected && wearNodeCount > 0) {
+                Text(
+                    text = stringResource(R.string.wear_status_connected_fmt, wearNodeCount),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            OutlinedButton(
+                onClick = onOpenWearCompanion,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    if (wearConnected) {
+                        stringResource(R.string.wear_open_or_install_app)
+                    } else {
+                        stringResource(R.string.wear_install_app)
+                    },
+                )
+            }
 
             if (history.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))

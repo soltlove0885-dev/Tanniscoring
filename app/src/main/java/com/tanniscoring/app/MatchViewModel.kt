@@ -1,6 +1,7 @@
 package com.tanniscoring.app
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.tanniscoring.app.data.MatchRepository
@@ -51,6 +52,11 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
                 _uiState.update { it.copy(wearConnected = connected) }
             }
         }
+        viewModelScope.launch {
+            sync.connectedNodeCount.collect { count ->
+                _uiState.update { it.copy(wearNodeCount = count) }
+            }
+        }
         sync.startListening()
         // Push current state so Wear can catch up after process death / reconnect.
         _uiState.value.matchState?.let { state ->
@@ -69,6 +75,13 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
             draftPlayerB = if (doubles && it.draftPlayerB == "선수 B") "팀 B" else
                 if (!doubles && it.draftPlayerB == "팀 B") "선수 B" else it.draftPlayerB,
         )
+    }
+
+    /** Opens Wear companion Play Store on the watch (preferred) or phone (fallback). */
+    fun openWearCompanionApp(context: Context) {
+        viewModelScope.launch {
+            sync.openWearCompanionStore(context)
+        }
     }
 
     fun startMatch() {
@@ -224,6 +237,8 @@ data class MatchUiState(
     val draftDoubles: Boolean = false,
     val matchState: MatchState? = null,
     val canUndo: Boolean = false,
+    /** True when ≥1 Wear OS Data Layer node is connected — NOT that wear app is installed. */
     val wearConnected: Boolean = false,
+    val wearNodeCount: Int = 0,
     val history: List<MatchHistoryEntry> = emptyList(),
 )

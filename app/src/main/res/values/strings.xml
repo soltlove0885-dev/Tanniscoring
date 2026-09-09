@@ -29,7 +29,12 @@
     <string name="server_fmt">서브: %1$s</string>
     <string name="tap_to_toggle_server">탭하여 서버 변경</string>
     <string name="recent_matches">최근 경기</string>
-    <string name="sync_hint">워치와 페어링되면 점수가 실시간 동기화됩니다</string>
-    <string name="wear_connected">워치 연결됨</string>
+    <string name="sync_hint">워치와 페어링되면 점수가 실시간 동기화됩니다. 워치 앱(com.tanniscoring.wear)은 별도로 설치해야 합니다.</string>
+    <!-- Data Layer node connected — does NOT mean wear companion app is installed -->
+    <string name="wear_connected">워치 페어링됨 (Data Layer)</string>
     <string name="wear_disconnected">워치 미연결 (폰만으로 채점 가능)</string>
+    <string name="wear_status_connected_fmt">워치 노드 %1$d개 · 워치 앱은 별도 설치</string>
+    <string name="wear_status_paired_hint">워치 페어링됨 · 워치 앱은 별도 설치</string>
+    <string name="wear_install_app">워치 앱 설치</string>
+    <string name="wear_open_or_install_app">워치 앱 열기/설치</string>
 </resources>
