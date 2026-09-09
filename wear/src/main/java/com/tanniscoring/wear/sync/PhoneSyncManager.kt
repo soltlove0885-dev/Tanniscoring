@@ -21,8 +21,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 /**
- * Wear-side MessageClient bridge (cross-package; DataClient PutDataItem will NOT sync
- * between `com.tanniscoring.wear` and `com.tanniscoring.app`).
+ * Wear-side MessageClient bridge.
+ *
+ * Phone and Wear share applicationId `com.tanniscoring.app` so Data Layer routes
+ * reliably. Wear remains scoring authority.
  *
  * Wear → Phone: full [MatchStateDto] on [SyncPaths.PATH_STATE]
  * Phone → Wear: scoring events on [SyncPaths.PATH_EVENT]

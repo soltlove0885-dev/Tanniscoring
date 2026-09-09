@@ -23,8 +23,8 @@ android {
         applicationId = "com.tanniscoring.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 7
-        versionName = "0.3.4"
+        versionCode = 8
+        versionName = "0.4.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -73,6 +73,8 @@ android {
 
 dependencies {
     implementation(project(":shared"))
+    // Classic companion: embed Wear APK inside phone AAB/APK (same applicationId).
+    wearApp(project(":wear"))
 
     val composeBom = platform("androidx.compose:compose-bom:2024.10.01")
     implementation(composeBom)
@@ -89,8 +91,6 @@ dependencies {
 
     // Wearable Data Layer (phone side)
     implementation("com.google.android.gms:play-services-wearable:18.2.0")
-    // Open Play Store / activities on connected Wear nodes
-    implementation("androidx.wear:wear-remote-interactions:1.2.0")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")

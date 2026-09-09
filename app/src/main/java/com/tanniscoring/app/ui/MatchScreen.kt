@@ -45,7 +45,6 @@ fun MatchScreen(
     onToggleServer: () -> Unit,
     onEndMatch: () -> Unit,
     onNewMatch: () -> Unit,
-    onOpenWearCompanion: () -> Unit,
     onRequestState: () -> Unit = {},
 ) {
     val match = state.matchState ?: return
@@ -257,20 +256,6 @@ fun MatchScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.refresh_wear_state))
-            }
-
-            Spacer(Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = onOpenWearCompanion,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    if (state.wearConnected) {
-                        stringResource(R.string.wear_open_or_install_app)
-                    } else {
-                        stringResource(R.string.wear_install_app)
-                    },
-                )
             }
 
             Spacer(Modifier.height(16.dp))

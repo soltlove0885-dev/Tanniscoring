@@ -38,7 +38,6 @@ class MainActivity : ComponentActivity() {
                             onToggleServer = { viewModel.toggleServer() },
                             onEndMatch = { viewModel.endMatch() },
                             onNewMatch = { viewModel.resetToStart() },
-                            onOpenWearCompanion = { viewModel.openWearCompanionApp(this@MainActivity) },
                             onRequestState = { viewModel.requestWearState() },
                         )
                     } else {
@@ -46,7 +45,6 @@ class MainActivity : ComponentActivity() {
                             history = ui.history,
                             wearConnected = ui.wearConnected,
                             wearNodeCount = ui.wearNodeCount,
-                            onOpenWearCompanion = { viewModel.openWearCompanionApp(this@MainActivity) },
                             onRequestState = { viewModel.requestWearState() },
                         )
                     }

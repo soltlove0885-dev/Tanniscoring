@@ -49,7 +49,6 @@ fun StartMatchScreen(
     onBestOfChange: (Int) -> Unit,
     onDoublesChange: (Boolean) -> Unit,
     onStart: () -> Unit,
-    onOpenWearCompanion: () -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -151,19 +150,6 @@ fun StartMatchScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            OutlinedButton(
-                onClick = onOpenWearCompanion,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    if (wearConnected) {
-                        stringResource(R.string.wear_open_or_install_app)
-                    } else {
-                        stringResource(R.string.wear_install_app)
-                    },
-                )
-            }
-
             if (history.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
                 HorizontalDivider()

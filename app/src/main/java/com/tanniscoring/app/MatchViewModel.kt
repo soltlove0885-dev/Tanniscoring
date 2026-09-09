@@ -1,7 +1,6 @@
 package com.tanniscoring.app
 
 import android.app.Application
-import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.tanniscoring.app.data.MatchRepository
@@ -61,13 +60,6 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
             sync.requestState()
             delay(1_500)
             sync.requestState()
-        }
-    }
-
-    /** Opens Wear companion Play Store on the watch (preferred) or phone (fallback). */
-    fun openWearCompanionApp(context: Context) {
-        viewModelScope.launch {
-            sync.openWearCompanionStore(context)
         }
     }
 

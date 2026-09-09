@@ -1,11 +1,7 @@
 package com.tanniscoring.app.sync
 
-import android.content.ActivityNotFoundException
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.util.Log
-import androidx.wear.remote.interactions.RemoteActivityHelper
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.NodeClient
@@ -26,15 +22,13 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
-import java.util.concurrent.TimeUnit
 
 /**
  * Phone-side MessageClient bridge.
  *
- * Phone (`com.tanniscoring.app`) and Wear (`com.tanniscoring.wear`) are different
- * applicationIds — DataClient PutDataItem does **not** sync across packages.
- * All cross-device payloads use MessageClient.
+ * Phone and Wear share applicationId `com.tanniscoring.app` (Wear module keeps
+ * a separate Kotlin namespace). Same package is required for reliable Data Layer
+ * delivery on Galaxy Watch / Wear OS.
  *
  * Wear → Phone: full match state on [SyncPaths.PATH_STATE]
  * Phone → Wear: POINT/UNDO (etc.) on [SyncPaths.PATH_EVENT]
@@ -134,64 +128,6 @@ class WearSyncManager private constructor(context: Context) : MessageClient.OnMe
         }
     }
 
-    suspend fun openWearCompanionStore(activityContext: Context) {
-        val marketIntent = Intent(Intent.ACTION_VIEW)
-            .addCategory(Intent.CATEGORY_BROWSABLE)
-            .setData(Uri.parse(MARKET_URI))
-
-        val nodes = try {
-            nodeClient.connectedNodes.await()
-        } catch (e: Exception) {
-            Log.w(TAG, "connectedNodes failed", e)
-            emptyList()
-        }
-        updateNodeState(nodes.size)
-
-        if (nodes.isNotEmpty()) {
-            val openedRemote = tryOpenRemotePlayStore(marketIntent, nodes.map { it.id })
-            if (openedRemote) return
-        }
-        openPhonePlayStoreFallback(activityContext)
-    }
-
-    private suspend fun tryOpenRemotePlayStore(
-        marketIntent: Intent,
-        nodeIds: List<String>,
-    ): Boolean = withContext(Dispatchers.IO) {
-        val helper = RemoteActivityHelper(appContext)
-        val attempts = listOf<String?>(null) + nodeIds
-        for (nodeId in attempts) {
-            try {
-                val future = helper.startRemoteActivity(marketIntent, nodeId)
-                future.get(15, TimeUnit.SECONDS)
-                Log.d(TAG, "Remote Play Store opened (nodeId=$nodeId)")
-                return@withContext true
-            } catch (e: Exception) {
-                Log.w(TAG, "startRemoteActivity failed (nodeId=$nodeId)", e)
-            }
-        }
-        false
-    }
-
-    private fun openPhonePlayStoreFallback(activityContext: Context) {
-        val ctx = activityContext
-        val market = Intent(Intent.ACTION_VIEW, Uri.parse(MARKET_URI))
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        val https = Intent(
-            Intent.ACTION_VIEW,
-            Uri.parse("https://play.google.com/store/apps/details?id=$WEAR_PACKAGE"),
-        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        try {
-            ctx.startActivity(market)
-        } catch (_: ActivityNotFoundException) {
-            try {
-                ctx.startActivity(https)
-            } catch (e: Exception) {
-                Log.e(TAG, "Could not open Play Store for wear companion", e)
-            }
-        }
-    }
-
     private fun refreshNodes() {
         scope.launch {
             try {
@@ -210,8 +146,6 @@ class WearSyncManager private constructor(context: Context) : MessageClient.OnMe
 
     companion object {
         private const val TAG = "WearSyncManager"
-        const val WEAR_PACKAGE = "com.tanniscoring.wear"
-        private const val MARKET_URI = "market://details?id=$WEAR_PACKAGE"
 
         private val _incomingState = MutableSharedFlow<MatchStateDto>(
             replay = 1,

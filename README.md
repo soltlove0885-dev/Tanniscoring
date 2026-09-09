@@ -7,25 +7,30 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 
 | | |
 |---|---|
-| Version | `0.3.4` |
-| Phone applicationId | `com.tanniscoring.app` |
-| Wear applicationId | `com.tanniscoring.wear` |
+| Version | `0.4.0` (versionCode 8) |
+| applicationId (phone **and** wear) | `com.tanniscoring.app` |
 | minSdk | Phone 26 / Wear 30 |
 | UI | Jetpack Compose + Wear Compose (한국어) |
 
 ---
 
+## What's new in 0.4.0
+
+- **Unified package**: phone and wear both use `com.tanniscoring.app`. Cross-package MessageClient between `com.tanniscoring.app` and `com.tanniscoring.wear` was failing in the field (Galaxy Watch Ultra); same applicationId fixes Data Layer routing.
+- **Classic companion embed**: phone `wearApp(project(":wear"))` embeds the Wear APK inside the phone AAB/APK.
+- Keep **Wear-primary scoring** (0.3.4 UX): watch starts match, tap A/B, long-press undo; phone is scoreboard.
+- Removed separate “install wear from Play” button — companion installs with the phone app.
+
+## Upgrade from ≤0.3.4
+
+1. **Uninstall** the old watch app `com.tanniscoring.wear` from the Galaxy Watch.
+2. Install the new **phone** app `0.4.0` (AAB/APK). The Wear APK is embedded and installs as companion with the same id `com.tanniscoring.app`.
+3. Open **테니스코어링** from the watch launcher (not Play “other package”).
+4. Start a match on the watch → phone scoreboard updates live.
+
 ## What's new in 0.3.4
 
-- **Wear-primary scoring**: 워치가 채점 권한(authority). 경기 중 워치 A/B 탭으로 득점, 롱프레스로 되돌리기.
-- **Phone = live scoreboard**: 폰은 `MatchStateDto`를 받아 대형 스코어보드 표시. 「워치에서 득점 중」 배지.
-- **MessageClient only (cross-package)**: `com.tanniscoring.app` ≠ `com.tanniscoring.wear` 이라 DataClient PutDataItem은 패키지 간 동기화되지 않음. 상태/이벤트는 전부 MessageClient + WearableListenerService.
-- Wear 유휴 게이트 제거: 폰에서 경기 시작을 기다리지 않음. 워치에서 **경기 시작** (선수 A/B · best of 3 기본값).
-- 폰 미러 버튼(A/B/되돌리기)은 선택적으로 워치에 `PATH_EVENT` 전송.
-
-## What's new in 0.3
-
-- 타이브레이크 서버 로테이션, Wear/폰 TB UI, 테니스 볼 아이콘
+- Wear-primary scoring, phone live scoreboard, MessageClient both ways
 
 ---
 
@@ -33,17 +38,17 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 
 ```
 :shared   Pure Kotlin — TennisScoringEngine, MatchState, SyncJson DTOs
-:wear     Wear OS — scoring authority + MessageClient broadcast
-:app      Phone — scoreboard display + optional mirror events
+:wear     Wear OS — scoring authority + MessageClient (applicationId = com.tanniscoring.app)
+:app      Phone — scoreboard + wearApp(:wear) embed (same applicationId)
 ```
 
 ### Sync model (on-device only)
 
-**Wear is the source of truth.** Phone and Wear use **different applicationIds**, so prefer **MessageClient** for all cross-device payloads (DataClient same-package tricks will not help).
+**Wear is the source of truth.** Phone and Wear share **`com.tanniscoring.app`**, which is required for Wearable Data Layer delivery.
 
 1. Wear starts match → owns [TennisScoringEngine]
-2. Wear tap A/B / long-press undo → engine updates → MessageClient `PATH_STATE` → all connected phone nodes
-3. Phone `WearableListenerService` / MessageClient listener → UI scoreboard updates immediately
+2. Wear tap A/B / long-press undo → engine updates → MessageClient `PATH_STATE` → phone nodes
+3. Phone `WearableListenerService` / MessageClient listener → UI scoreboard updates
 4. Phone optional A/B/Undo → MessageClient `PATH_EVENT` → Wear applies scoring
 5. On Wear open / phone connect: Wear resends state; phone can send `PATH_REQUEST_STATE`
 
@@ -57,7 +62,7 @@ No backend, no API keys. Uses Google Play Services **Wearable Data Layer (Messag
 |--------|------|
 | `:shared` | Scoring (0/15/30/40, deuce, AD, games, sets, best-of-3/5, TB server rotation, undo) + unit tests |
 | `:wear` | Start match, large A/B taps, long-press undo, haptics, broadcast state |
-| `:app` | Live scoreboard, 「워치에서 득점 중」, optional mirror controls, Wear install |
+| `:app` | Live scoreboard, 「워치에서 득점 중」, optional mirror controls; embeds wear via `wearApp` |
 
 ---
 
@@ -79,19 +84,19 @@ No backend, no API keys. Uses Google Play Services **Wearable Data Layer (Messag
 
 1. Start a **Phone** emulator and a **Wear OS** emulator
 2. Pair them: Wear emulator → **… → Pair with companion** (or Device Manager pairing)
-3. Run configuration **`wear`** on the watch
-4. Run configuration **`app`** on the phone
-5. On the watch: **경기 시작** → tap **A** / **B** (long-press = undo)
-6. Phone scoreboard updates live — 「워치에서 득점 중」
-7. Phone mirror buttons optional (send events to Wear)
+3. Install/run **`app`** on the phone (embeds wear) — or run **`wear`** on the watch for debug
+4. On the watch launcher: open **테니스코어링** → **경기 시작** → tap **A** / **B** (long-press = undo)
+5. Phone scoreboard updates live — 「워치에서 득점 중」
+6. Phone mirror buttons optional (send events to Wear)
 
 ### Verify sync checklist
 
-- [ ] Wear starts match alone (no “start on phone” stuck screen)
+- [ ] Old `com.tanniscoring.wear` uninstalled from watch
+- [ ] Phone + wear both report package `com.tanniscoring.app`
+- [ ] Wear starts match alone
 - [ ] Wear A/B → phone points update in real time
 - [ ] Wear long-press → undo on both
 - [ ] Phone reconnect / REQUEST_STATE → Wear resends
-- [ ] Different applicationIds still sync via MessageClient
 - [ ] Kill wear process → reopen restores current match (prefs)
 - [ ] Finished matches appear under phone **최근 경기**
 
@@ -119,7 +124,7 @@ No backend, no API keys. Uses Google Play Services **Wearable Data Layer (Messag
 
 ```
 Tanniscoring/
-├── app/                 # Phone scoreboard
+├── app/                 # Phone scoreboard (+ wearApp embed)
 ├── wear/                # Wear scoring authority
 ├── shared/              # Pure Kotlin + JUnit 5
 ├── build.gradle.kts

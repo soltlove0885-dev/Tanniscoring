@@ -35,7 +35,6 @@ fun ScoreboardIdleScreen(
     history: List<MatchHistoryEntry>,
     wearConnected: Boolean,
     wearNodeCount: Int,
-    onOpenWearCompanion: () -> Unit,
     onRequestState: () -> Unit,
 ) {
     Scaffold(
@@ -87,18 +86,6 @@ fun ScoreboardIdleScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.refresh_wear_state))
-            }
-            OutlinedButton(
-                onClick = onOpenWearCompanion,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    if (wearConnected) {
-                        stringResource(R.string.wear_open_or_install_app)
-                    } else {
-                        stringResource(R.string.wear_install_app)
-                    },
-                )
             }
 
             if (history.isNotEmpty()) {

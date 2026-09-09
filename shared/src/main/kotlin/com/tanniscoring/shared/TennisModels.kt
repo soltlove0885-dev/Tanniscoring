@@ -106,8 +106,8 @@ data class MatchState(
  * Wire messages between phone and Wear.
  *
  * Architecture: **Wear is the scoring authority.**
- * Phone and Wear use different applicationIds, so DataClient PutDataItem does NOT
- * sync across packages. Prefer MessageClient for all cross-device payloads.
+ * Phone and Wear share applicationId `com.tanniscoring.app` (required for Data Layer).
+ * Both still use MessageClient + WearableListenerService for state/events.
  *
  * Wear applies scoring and broadcasts FullState on [SyncPaths.PATH_STATE].
  * Phone (optional) sends PointWon / Undo on [SyncPaths.PATH_EVENT]; Wear applies them.
