@@ -6,11 +6,9 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.wear.remote.interactions.RemoteActivityHelper
-import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.NodeClient
-import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import com.tanniscoring.shared.MatchStateDto
 import com.tanniscoring.shared.ScoringEventDto
@@ -19,6 +17,7 @@ import com.tanniscoring.shared.SyncPaths
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -31,31 +30,24 @@ import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
 /**
- * Phone-side Wearable Data Layer bridge.
- * - Listens for scoring events from Wear on [SyncPaths.PATH_EVENT]
- * - Listens for state requests on [SyncPaths.PATH_REQUEST_STATE]
- * - Broadcasts full match state via DataClient ([SyncPaths.PATH_STATE]) + MessageClient
+ * Phone-side MessageClient bridge.
  *
- * Note: [wearConnected] / [connectedNodeCount] reflect Wear OS **nodes** reachable
- * via the Data Layer — they do **not** mean `com.tanniscoring.wear` is installed.
+ * Phone (`com.tanniscoring.app`) and Wear (`com.tanniscoring.wear`) are different
+ * applicationIds — DataClient PutDataItem does **not** sync across packages.
+ * All cross-device payloads use MessageClient.
  *
- * MessageClient alone is unreliable on Samsung Wear (messages sent before a listener
- * is registered are lost). DataClient PutDataMapRequest + WearableListenerService
- * keep state durable and deliverable when Wear is on the waiting screen.
+ * Wear → Phone: full match state on [SyncPaths.PATH_STATE]
+ * Phone → Wear: POINT/UNDO (etc.) on [SyncPaths.PATH_EVENT]
+ * Phone → Wear: REQUEST_STATE on [SyncPaths.PATH_REQUEST_STATE]
  */
 class WearSyncManager private constructor(context: Context) : MessageClient.OnMessageReceivedListener {
 
     private val appContext = context.applicationContext
     private val messageClient: MessageClient = Wearable.getMessageClient(appContext)
-    private val dataClient: DataClient = Wearable.getDataClient(appContext)
     private val nodeClient: NodeClient = Wearable.getNodeClient(appContext)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private val _incomingEvents = MutableSharedFlow<ScoringEventDto>(extraBufferCapacity = 16)
-    val incomingEvents: SharedFlow<ScoringEventDto> = _incomingEvents.asSharedFlow()
-
-    private val _stateRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 8)
-    val stateRequests: SharedFlow<Unit> = _stateRequests.asSharedFlow()
+    val incomingState: SharedFlow<MatchStateDto> = Companion.incomingState
 
     private val _wearConnected = MutableStateFlow(false)
     val wearConnected: StateFlow<Boolean> = _wearConnected.asStateFlow()
@@ -66,6 +58,7 @@ class WearSyncManager private constructor(context: Context) : MessageClient.OnMe
     fun startListening() {
         messageClient.addListener(this)
         refreshNodes()
+        Log.d(TAG, "startListening MessageClient")
     }
 
     fun stopListening() {
@@ -78,54 +71,69 @@ class WearSyncManager private constructor(context: Context) : MessageClient.OnMe
 
     fun handleMessage(path: String, data: ByteArray) {
         when (path) {
-            SyncPaths.PATH_EVENT -> {
+            SyncPaths.PATH_STATE -> {
                 val json = data.toString(Charsets.UTF_8)
-                Log.d(TAG, "Event from wear: $json")
-                runCatching { SyncJson.decodeEvent(json) }
-                    .onSuccess { _incomingEvents.tryEmit(it) }
-                    .onFailure { Log.e(TAG, "Failed to decode event", it) }
+                Log.d(TAG, "State from wear: $json")
+                runCatching { SyncJson.decodeState(json) }
+                    .onSuccess { _incomingState.tryEmit(it) }
+                    .onFailure { Log.e(TAG, "Failed to decode state", it) }
             }
-            SyncPaths.PATH_REQUEST_STATE -> {
-                Log.d(TAG, "REQUEST_STATE from wear")
-                _stateRequests.tryEmit(Unit)
+            else -> Log.d(TAG, "Ignoring path=$path")
+        }
+    }
+
+    /** Ask Wear to re-broadcast current match state. Retries if no nodes. */
+    suspend fun requestState(retries: Int = 3) {
+        val payload = ByteArray(0)
+        var attempt = 0
+        while (attempt < retries) {
+            attempt++
+            try {
+                val nodes = nodeClient.connectedNodes.await()
+                updateNodeState(nodes.size)
+                if (nodes.isEmpty()) {
+                    Log.w(TAG, "requestState attempt $attempt: no wear nodes")
+                    if (attempt < retries) delay(400L * attempt)
+                    continue
+                }
+                for (node in nodes) {
+                    messageClient.sendMessage(node.id, SyncPaths.PATH_REQUEST_STATE, payload).await()
+                }
+                Log.d(TAG, "REQUEST_STATE sent to ${nodes.size} node(s)")
+                return
+            } catch (e: Exception) {
+                Log.w(TAG, "requestState attempt $attempt failed", e)
+                if (attempt < retries) delay(400L * attempt)
             }
         }
     }
 
-    /**
-     * Primary: urgent Data Layer item at [SyncPaths.PATH_STATE] (key "json").
-     * Secondary: MessageClient broadcast to connected nodes.
-     */
-    suspend fun sendState(dto: MatchStateDto) {
-        val json = SyncJson.encodeState(dto)
-        val payload = json.toByteArray(Charsets.UTF_8)
-        try {
-            val putRequest = PutDataMapRequest.create(SyncPaths.PATH_STATE).apply {
-                dataMap.putString(KEY_JSON, json)
-                // Force a change notification even if payload is identical (re-sync).
-                dataMap.putLong(KEY_TS, System.currentTimeMillis())
-            }.asPutDataRequest().setUrgent()
-            dataClient.putDataItem(putRequest).await()
-            Log.d(TAG, "putDataItem state ok (matchActive=${dto.matchActive})")
-        } catch (e: Exception) {
-            Log.w(TAG, "putDataItem failed (emulator without Play Services is OK)", e)
-        }
-        try {
-            val nodes = nodeClient.connectedNodes.await()
-            updateNodeState(nodes.size)
-            for (node in nodes) {
-                messageClient.sendMessage(node.id, SyncPaths.PATH_STATE, payload).await()
+    /** Send scoring event to Wear (Wear applies scoring). */
+    suspend fun sendEvent(event: ScoringEventDto, retries: Int = 3) {
+        val payload = SyncJson.encodeEvent(event).toByteArray(Charsets.UTF_8)
+        var attempt = 0
+        while (attempt < retries) {
+            attempt++
+            try {
+                val nodes = nodeClient.connectedNodes.await()
+                updateNodeState(nodes.size)
+                if (nodes.isEmpty()) {
+                    Log.w(TAG, "sendEvent attempt $attempt: no wear nodes")
+                    if (attempt < retries) delay(400L * attempt)
+                    continue
+                }
+                for (node in nodes) {
+                    messageClient.sendMessage(node.id, SyncPaths.PATH_EVENT, payload).await()
+                }
+                Log.d(TAG, "sendEvent ${event.type} to ${nodes.size} node(s)")
+                return
+            } catch (e: Exception) {
+                Log.w(TAG, "sendEvent attempt $attempt failed", e)
+                if (attempt < retries) delay(400L * attempt)
             }
-        } catch (e: Exception) {
-            Log.w(TAG, "sendState MessageClient failed", e)
-            updateNodeState(0)
         }
     }
 
-    /**
-     * Prefer opening Play Store details for [WEAR_PACKAGE] on connected Wear nodes via
-     * [RemoteActivityHelper]. Falls back to the phone Play Store so the user can pick a watch.
-     */
     suspend fun openWearCompanionStore(activityContext: Context) {
         val marketIntent = Intent(Intent.ACTION_VIEW)
             .addCategory(Intent.CATEGORY_BROWSABLE)
@@ -204,8 +212,12 @@ class WearSyncManager private constructor(context: Context) : MessageClient.OnMe
         private const val TAG = "WearSyncManager"
         const val WEAR_PACKAGE = "com.tanniscoring.wear"
         private const val MARKET_URI = "market://details?id=$WEAR_PACKAGE"
-        const val KEY_JSON = "json"
-        const val KEY_TS = "ts"
+
+        private val _incomingState = MutableSharedFlow<MatchStateDto>(
+            replay = 1,
+            extraBufferCapacity = 8,
+        )
+        val incomingState: SharedFlow<MatchStateDto> = _incomingState.asSharedFlow()
 
         @Volatile
         private var instance: WearSyncManager? = null
@@ -216,13 +228,15 @@ class WearSyncManager private constructor(context: Context) : MessageClient.OnMe
             }
         }
 
-        /** Called from [TanniscoringWearListenerService] when the Activity/ViewModel may be gone. */
         fun handleServiceMessage(messageEvent: MessageEvent) {
-            val mgr = instance
-            if (mgr != null) {
-                mgr.handleMessage(messageEvent.path, messageEvent.data)
+            if (messageEvent.path == SyncPaths.PATH_STATE) {
+                val json = messageEvent.data.toString(Charsets.UTF_8)
+                Log.d(TAG, "Service state from wear: $json")
+                runCatching { SyncJson.decodeState(json) }
+                    .onSuccess { _incomingState.tryEmit(it) }
+                    .onFailure { Log.e(TAG, "Failed to decode state", it) }
             } else {
-                Log.d(TAG, "Service message ${messageEvent.path} with no WearSyncManager yet")
+                instance?.handleMessage(messageEvent.path, messageEvent.data)
             }
         }
     }

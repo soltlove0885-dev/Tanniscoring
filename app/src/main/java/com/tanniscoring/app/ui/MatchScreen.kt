@@ -46,6 +46,7 @@ fun MatchScreen(
     onEndMatch: () -> Unit,
     onNewMatch: () -> Unit,
     onOpenWearCompanion: () -> Unit,
+    onRequestState: () -> Unit = {},
 ) {
     val match = state.matchState ?: return
     Scaffold(
@@ -74,6 +75,22 @@ fun MatchScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            if (state.scoringFromWear) {
+                Text(
+                    text = stringResource(R.string.scoring_from_wear),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.tertiaryContainer)
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.height(8.dp))
+            }
+
             Text(
                 text = if (match.mode == MatchMode.DOUBLES) {
                     stringResource(R.string.doubles)
@@ -86,7 +103,6 @@ fun MatchScreen(
 
             Spacer(Modifier.height(4.dp))
 
-            // Scoreboard header
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -127,11 +143,6 @@ fun MatchScreen(
                     .clip(RoundedCornerShape(8.dp))
                     .clickable(enabled = !match.isMatchOver, onClick = onToggleServer)
                     .padding(horizontal = 12.dp, vertical = 6.dp),
-            )
-            Text(
-                text = stringResource(R.string.tap_to_toggle_server),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             Spacer(Modifier.height(12.dp))
@@ -184,6 +195,13 @@ fun MatchScreen(
             Spacer(Modifier.height(16.dp))
 
             if (!match.isMatchOver) {
+                Text(
+                    text = stringResource(R.string.phone_mirror_hint),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.height(8.dp))
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -234,23 +252,13 @@ fun MatchScreen(
             }
 
             Spacer(Modifier.height(8.dp))
-            Text(
-                text = if (state.wearConnected) {
-                    stringResource(R.string.wear_status_paired_hint)
-                } else {
-                    stringResource(R.string.wear_disconnected)
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-            if (state.wearConnected && state.wearNodeCount > 0) {
-                Text(
-                    text = stringResource(R.string.wear_status_connected_fmt, state.wearNodeCount),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            OutlinedButton(
+                onClick = onRequestState,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.refresh_wear_state))
             }
+
             Spacer(Modifier.height(8.dp))
             OutlinedButton(
                 onClick = onOpenWearCompanion,

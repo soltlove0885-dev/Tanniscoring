@@ -1,14 +1,13 @@
 package com.tanniscoring.wear.ui
 
 import android.view.HapticFeedbackConstants
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -26,8 +26,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.ButtonDefaults
-import androidx.wear.compose.material.CompactButton
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import com.tanniscoring.shared.Side
@@ -41,11 +39,16 @@ fun WearScoreScreen(
     onPointA: () -> Unit,
     onPointB: () -> Unit,
     onUndo: () -> Unit,
+    onStart: () -> Unit,
     onToggleServer: () -> Unit = {},
+    onNewMatch: () -> Unit = {},
 ) {
     val view = LocalView.current
     fun hapticPoint() {
         view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+    }
+    fun hapticUndo() {
+        view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
     }
 
     Box(
@@ -55,64 +58,54 @@ fun WearScoreScreen(
             .padding(6.dp),
         contentAlignment = Alignment.Center,
     ) {
-        val match = state.match
-        val active = state.hasState && match != null && match.matchActive
-
-        if (!active) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(12.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.waiting),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.body1,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(8.dp),
-                )
-                Text(
-                    text = stringResource(R.string.waiting_hint),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.caption2,
-                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
-                )
-            }
+        if (!state.matchStarted || state.matchState == null) {
+            StartMatchWear(
+                onStart = {
+                    hapticPoint()
+                    onStart()
+                },
+            )
             return
         }
+
+        val match = state.matchState
 
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .combinedClickable(
+                        onClick = {},
+                        onLongClick = {
+                            if (!match.isMatchOver) {
+                                hapticUndo()
+                                onUndo()
+                            }
+                        },
+                    ),
+            ) {
                 Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .combinedClickable(
-                            onClick = {},
-                            onLongClick = {
-                                if (!match!!.isMatchOver) {
-                                    view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                                    onToggleServer()
-                                }
-                            },
-                        ),
+                    Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                 ) {
                     PlayerMini(
-                        name = match!!.playerA,
+                        name = match.playerA,
                         sets = match.setsA,
                         games = match.gamesA,
                         points = match.pointDisplayA,
-                        isServing = match.server == Side.A.name && !match.isMatchOver,
+                        isServing = match.server == Side.A && !match.isMatchOver,
                     )
                     PlayerMini(
                         name = match.playerB,
                         sets = match.setsB,
                         games = match.gamesB,
                         points = match.pointDisplayB,
-                        isServing = match.server == Side.B.name && !match.isMatchOver,
+                        isServing = match.server == Side.B && !match.isMatchOver,
                     )
                 }
                 val status = when {
@@ -121,7 +114,7 @@ fun WearScoreScreen(
                     match.isDeuce -> stringResource(R.string.deuce)
                     else -> stringResource(
                         R.string.server_short,
-                        if (match.server == Side.A.name) "A" else "B",
+                        if (match.server == Side.A) "A" else "B",
                     )
                 }
                 Text(
@@ -135,33 +128,72 @@ fun WearScoreScreen(
                     },
                     modifier = Modifier.padding(top = 2.dp),
                 )
-                if (match.isTiebreak && !match.isMatchOver) {
+                if (!match.isMatchOver) {
                     Text(
-                        text = stringResource(R.string.tiebreak_full),
+                        text = stringResource(R.string.long_press_undo),
                         style = MaterialTheme.typography.caption3,
-                        color = MaterialTheme.colors.onSurface.copy(alpha = 0.75f),
+                        color = MaterialTheme.colors.onSurface.copy(alpha = 0.65f),
                     )
                 }
             }
 
-            PointButtons(
-                onPointA = {
-                    hapticPoint()
-                    onPointA()
-                },
-                onPointB = {
-                    hapticPoint()
-                    onPointB()
-                },
-                onUndo = {
-                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                    onUndo()
-                },
-                onToggleServer = {
-                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                    onToggleServer()
-                },
-                enabled = !match.isMatchOver,
+            if (match.isMatchOver) {
+                Button(
+                    onClick = onNewMatch,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                ) {
+                    Text(stringResource(R.string.new_match), fontWeight = FontWeight.Bold)
+                }
+            } else {
+                PointButtons(
+                    onPointA = {
+                        hapticPoint()
+                        onPointA()
+                    },
+                    onPointB = {
+                        hapticPoint()
+                        onPointB()
+                    },
+                    onLongPressUndo = {
+                        hapticUndo()
+                        onUndo()
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StartMatchWear(onStart: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.app_name),
+            style = MaterialTheme.typography.title3,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = stringResource(R.string.start_defaults),
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.caption2,
+            color = MaterialTheme.colors.onSurface.copy(alpha = 0.75f),
+        )
+        Button(
+            onClick = onStart,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.start_match),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
             )
         }
     }
@@ -195,7 +227,7 @@ private fun PlayerMini(
         }
         Text(
             text = points,
-            fontSize = 26.sp,
+            fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
         )
         Text(
@@ -205,58 +237,53 @@ private fun PlayerMini(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PointButtons(
     onPointA: () -> Unit,
     onPointB: () -> Unit,
-    onUndo: () -> Unit,
-    onToggleServer: () -> Unit,
-    enabled: Boolean,
+    onLongPressUndo: () -> Unit,
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Button(
-                onClick = onPointA,
-                enabled = enabled,
-                modifier = Modifier.size(68.dp),
-                shape = CircleShape,
-            ) {
-                Text(stringResource(R.string.point_a), fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            }
-            Button(
-                onClick = onPointB,
-                enabled = enabled,
-                modifier = Modifier.size(68.dp),
-                shape = CircleShape,
-                colors = ButtonDefaults.primaryButtonColors(
-                    backgroundColor = MaterialTheme.colors.secondary,
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(bottom = 4.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colors.primary)
+                .combinedClickable(
+                    onClick = onPointA,
+                    onLongClick = onLongPressUndo,
                 ),
-            ) {
-                Text(stringResource(R.string.point_b), fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            }
-        }
-        Spacer(Modifier.height(2.dp))
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            contentAlignment = Alignment.Center,
         ) {
-            CompactButton(
-                onClick = onUndo,
-                enabled = enabled,
-                modifier = Modifier.size(width = 72.dp, height = 36.dp),
-            ) {
-                Text(stringResource(R.string.undo), style = MaterialTheme.typography.caption2)
-            }
-            CompactButton(
-                onClick = onToggleServer,
-                enabled = enabled,
-                modifier = Modifier.size(width = 56.dp, height = 36.dp),
-            ) {
-                Text(stringResource(R.string.toggle_server), style = MaterialTheme.typography.caption2)
-            }
+            Text(
+                stringResource(R.string.point_a),
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colors.onPrimary,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colors.secondary)
+                .combinedClickable(
+                    onClick = onPointB,
+                    onLongClick = onLongPressUndo,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                stringResource(R.string.point_b),
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colors.onSecondary,
+            )
         }
     }
 }

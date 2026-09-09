@@ -12,7 +12,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.tanniscoring.app.ui.MatchScreen
-import com.tanniscoring.app.ui.StartMatchScreen
+import com.tanniscoring.app.ui.ScoreboardIdleScreen
 import com.tanniscoring.app.ui.TanniscoringTheme
 
 class MainActivity : ComponentActivity() {
@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background,
                 ) {
                     val ui by viewModel.uiState.collectAsState()
-                    if (ui.matchStarted) {
+                    if (ui.matchStarted && ui.matchState != null) {
                         MatchScreen(
                             state = ui,
                             onPointA = { viewModel.pointWonA() },
@@ -39,22 +39,15 @@ class MainActivity : ComponentActivity() {
                             onEndMatch = { viewModel.endMatch() },
                             onNewMatch = { viewModel.resetToStart() },
                             onOpenWearCompanion = { viewModel.openWearCompanionApp(this@MainActivity) },
+                            onRequestState = { viewModel.requestWearState() },
                         )
                     } else {
-                        StartMatchScreen(
-                            playerA = ui.draftPlayerA,
-                            playerB = ui.draftPlayerB,
-                            bestOf = ui.draftBestOf,
-                            doubles = ui.draftDoubles,
+                        ScoreboardIdleScreen(
                             history = ui.history,
                             wearConnected = ui.wearConnected,
                             wearNodeCount = ui.wearNodeCount,
-                            onPlayerAChange = viewModel::setDraftPlayerA,
-                            onPlayerBChange = viewModel::setDraftPlayerB,
-                            onBestOfChange = viewModel::setDraftBestOf,
-                            onDoublesChange = viewModel::setDraftDoubles,
-                            onStart = { viewModel.startMatch() },
                             onOpenWearCompanion = { viewModel.openWearCompanionApp(this@MainActivity) },
+                            onRequestState = { viewModel.requestWearState() },
                         )
                     }
                 }

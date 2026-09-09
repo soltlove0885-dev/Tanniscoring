@@ -82,7 +82,7 @@ data class MatchState(
     val setHistory: List<SetScore>,
     /** Side currently serving. Rotates after each game; during tiebreak after odd points. */
     val server: Side = Side.A,
-    /** True while a match is loaded on the phone (in progress or finished view). */
+    /** True while a match is loaded (in progress or finished view). */
     val matchActive: Boolean = true,
 ) {
     val pointDisplayA: String get() = displayPoint(Side.A)
@@ -105,15 +105,19 @@ data class MatchState(
 /**
  * Wire messages between phone and Wear.
  *
- * Architecture choice: **Phone is the scoring authority.**
- * Wear sends PointWon / Undo / StartMatch events; phone applies them
- * and broadcasts FullState back via MessageClient / DataClient.
+ * Architecture: **Wear is the scoring authority.**
+ * Phone and Wear use different applicationIds, so DataClient PutDataItem does NOT
+ * sync across packages. Prefer MessageClient for all cross-device payloads.
+ *
+ * Wear applies scoring and broadcasts FullState on [SyncPaths.PATH_STATE].
+ * Phone (optional) sends PointWon / Undo on [SyncPaths.PATH_EVENT]; Wear applies them.
+ * Either side may send [SyncPaths.PATH_REQUEST_STATE] to ask the other to re-push.
  */
 object SyncPaths {
     const val PATH_EVENT = "/tanniscoring/event"
-    /** MessageClient path and Data Layer path for full match state. */
+    /** MessageClient path for full match state (Wear → Phone). */
     const val PATH_STATE = "/tanniscoring/state"
-    /** Wear → Phone: ask phone to re-broadcast current state. */
+    /** Ask peer to re-broadcast current state. */
     const val PATH_REQUEST_STATE = "/tanniscoring/request_state"
 }
 
@@ -160,7 +164,7 @@ data class SetScoreDto(
 )
 
 /**
- * Event payload from Wear → Phone (or local phone buttons).
+ * Event payload — typically Phone → Wear (mirror controls), or Wear-local.
  */
 data class ScoringEventDto(
     val type: String,

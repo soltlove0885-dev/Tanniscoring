@@ -20,12 +20,20 @@ class MainActivity : ComponentActivity() {
                 val ui by viewModel.uiState.collectAsState()
                 WearScoreScreen(
                     state = ui,
-                    onPointA = { viewModel.sendPointA() },
-                    onPointB = { viewModel.sendPointB() },
-                    onUndo = { viewModel.sendUndo() },
-                    onToggleServer = { viewModel.sendToggleServer() },
+                    onPointA = { viewModel.pointWonA() },
+                    onPointB = { viewModel.pointWonB() },
+                    onUndo = { viewModel.undo() },
+                    onStart = { viewModel.startMatch() },
+                    onToggleServer = { viewModel.toggleServer() },
+                    onNewMatch = { viewModel.resetToStart() },
                 )
             }
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.resyncToPhone()
+    }
 }
+
