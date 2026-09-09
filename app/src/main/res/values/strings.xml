@@ -30,13 +30,19 @@
     <string name="tap_to_toggle_server">탭하여 서버 변경</string>
     <string name="recent_matches">최근 경기</string>
     <string name="waiting_for_wear">워치에서 경기를 시작하세요</string>
-    <string name="waiting_for_wear_hint">폰 앱 설치 시 워치 앱이 함께 설치됩니다. Galaxy Watch 런처에서 「테니스코어링」을 연 뒤 「경기 시작」을 누르면 이 화면이 실시간 스코어보드로 바뀝니다.</string>
+    <string name="waiting_for_wear_hint">Galaxy Watch에서 「테니스코어링」을 연 뒤 「경기 시작」을 누르면 이 화면이 실시간 스코어보드로 바뀝니다. 자동 설치가 안 되면 아래 「워치에 설치」를 사용하세요.</string>
     <string name="scoring_from_wear">워치에서 득점 중</string>
     <string name="phone_mirror_hint">아래 버튼은 워치로 이벤트를 보냅니다 (선택)</string>
     <string name="refresh_wear_state">워치 점수 새로고침</string>
     <string name="sync_hint">워치가 채점 권한입니다. 동일 패키지(com.tanniscoring.app) MessageClient로 점수가 실시간 동기화됩니다.</string>
     <string name="wear_connected">워치 페어링됨</string>
     <string name="wear_disconnected">워치 미연결</string>
-    <string name="wear_status_connected_fmt">워치 노드 %1$d개 · 워치 앱은 폰과 함께 설치</string>
-    <string name="wear_status_paired_hint">워치 페어링됨 · 워치 런처에서 앱을 여세요</string>
+    <string name="wear_status_connected_fmt">워치 노드 %1$d개 연결됨</string>
+    <string name="wear_status_paired_hint">워치 페어링됨 · 「워치 앱 열기」또는 워치 런처에서 앱을 여세요</string>
+    <string name="wear_open_app">워치 앱 열기</string>
+    <string name="wear_install_app">워치에 설치</string>
+    <string name="wear_auto_install_hint">Galaxy Watch에서는 폰 설치 시 워치 앱 자동 설치가 자주 실패합니다. 「워치에 설치」버튼으로 워치 Play를 열거나, 워치 Play에서 「테니스코어링」을 직접 설치하세요. 폰 Play에서는 「웨어러블에 설치」를 사용하세요.</string>
+    <string name="wear_install_phone_fallback_hint">워치 Play를 열지 못했습니다. 폰 Play에서 「웨어러블에 설치」를 누르거나, 워치 Play에서 com.tanniscoring.app 를 설치하세요.</string>
+    <string name="wear_open_need_connection">연결된 워치가 없습니다. Galaxy Watch와 폰을 페어링한 뒤 다시 시도하세요.</string>
+    <string name="wear_open_failed_hint">워치 앱을 열지 못했습니다. 워치에 앱이 없으면 「워치에 설치」를 먼저 사용하세요.</string>
 </resources>

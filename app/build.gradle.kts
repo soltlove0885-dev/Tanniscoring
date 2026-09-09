@@ -23,8 +23,8 @@ android {
         applicationId = "com.tanniscoring.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 10
-        versionName = "1.0.0"
+        versionCode = 11
+        versionName = "1.0.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -91,6 +91,7 @@ dependencies {
 
     // Wearable Data Layer (phone side)
     implementation("com.google.android.gms:play-services-wearable:18.2.0")
+    implementation("androidx.wear:wear-remote-interactions:1.2.0")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")

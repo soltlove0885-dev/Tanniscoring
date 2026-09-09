@@ -1,11 +1,18 @@
 package com.tanniscoring.app.sync
 
+import android.content.ActivityNotFoundException
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
+import android.widget.Toast
+import androidx.wear.remote.interactions.RemoteActivityHelper
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.NodeClient
 import com.google.android.gms.wearable.Wearable
+import com.tanniscoring.app.R
 import com.tanniscoring.shared.MatchStateDto
 import com.tanniscoring.shared.ScoringEventDto
 import com.tanniscoring.shared.SyncJson
@@ -22,6 +29,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import java.util.concurrent.TimeUnit
 
 /**
  * Phone-side MessageClient bridge.
@@ -128,7 +137,130 @@ class WearSyncManager private constructor(context: Context) : MessageClient.OnMe
         }
     }
 
+
+    /**
+     * Launch Wear [MainActivity] on connected nodes (same applicationId).
+     * Uses RemoteActivityHelper; no-ops gracefully if no nodes / app missing.
+     */
+    suspend fun openWearApp(activityContext: Context) {
+        val launchIntent = Intent(Intent.ACTION_MAIN)
+            .addCategory(Intent.CATEGORY_LAUNCHER)
+            .setComponent(ComponentName(APP_PACKAGE, WEAR_MAIN_ACTIVITY))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+        val nodes = connectedNodeIds()
+        if (nodes.isEmpty()) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(
+                    activityContext,
+                    activityContext.getString(
+                        R.string.wear_open_need_connection,
+                    ),
+                    Toast.LENGTH_LONG,
+                ).show()
+            }
+            return
+        }
+        val opened = startRemoteOnNodes(launchIntent, nodes)
+        if (!opened) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(
+                    activityContext,
+                    activityContext.getString(
+                        R.string.wear_open_failed_hint,
+                    ),
+                    Toast.LENGTH_LONG,
+                ).show()
+            }
+        }
+    }
+
+    /**
+     * Open Play Store details for [APP_PACKAGE] on the watch via RemoteActivityHelper.
+     * Falls back to phone Play + toast hint to use 「웨어러블에 설치」 / watch Play.
+     */
+    suspend fun openWearCompanionStore(activityContext: Context) {
+        val marketIntent = Intent(Intent.ACTION_VIEW)
+            .addCategory(Intent.CATEGORY_BROWSABLE)
+            .setData(Uri.parse(MARKET_URI))
+
+        val nodes = connectedNodeIds()
+        if (nodes.isNotEmpty()) {
+            val openedRemote = startRemoteOnNodes(marketIntent, nodes)
+            if (openedRemote) return
+        }
+        openPhonePlayStoreFallback(activityContext)
+    }
+
+    private suspend fun connectedNodeIds(): List<String> {
+        return try {
+            val nodes = nodeClient.connectedNodes.await()
+            updateNodeState(nodes.size)
+            nodes.map { it.id }
+        } catch (e: Exception) {
+            Log.w(TAG, "connectedNodes failed", e)
+            updateNodeState(0)
+            emptyList()
+        }
+    }
+
+    private suspend fun startRemoteOnNodes(
+        intent: Intent,
+        nodeIds: List<String>,
+    ): Boolean = withContext(Dispatchers.IO) {
+        val helper = RemoteActivityHelper(appContext)
+        // null targetNodeId → all connected watches; also try each node explicitly.
+        val attempts = listOf<String?>(null) + nodeIds
+        for (nodeId in attempts) {
+            try {
+                val future = helper.startRemoteActivity(intent, nodeId)
+                future.get(15, TimeUnit.SECONDS)
+                Log.d(TAG, "startRemoteActivity ok (nodeId=$nodeId action=${intent.action})")
+                return@withContext true
+            } catch (e: Exception) {
+                Log.w(TAG, "startRemoteActivity failed (nodeId=$nodeId)", e)
+            }
+        }
+        false
+    }
+
+    private fun openPhonePlayStoreFallback(activityContext: Context) {
+        val ctx = activityContext
+        withContextToastHint(ctx)
+        val market = Intent(Intent.ACTION_VIEW, Uri.parse(MARKET_URI))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val https = Intent(
+            Intent.ACTION_VIEW,
+            Uri.parse("https://play.google.com/store/apps/details?id=$APP_PACKAGE"),
+        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        try {
+            ctx.startActivity(market)
+        } catch (_: ActivityNotFoundException) {
+            try {
+                ctx.startActivity(https)
+            } catch (e: Exception) {
+                Log.e(TAG, "Could not open Play Store for wear companion", e)
+            }
+        }
+    }
+
+    private fun withContextToastHint(ctx: Context) {
+        // Prefer main-thread Toast; callers may be on IO after remote fail.
+        try {
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                Toast.makeText(
+                    ctx,
+                    ctx.getString(R.string.wear_install_phone_fallback_hint),
+                    Toast.LENGTH_LONG,
+                ).show()
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "toast hint failed", e)
+        }
+    }
+
     private fun refreshNodes() {
+
         scope.launch {
             try {
                 val nodes = nodeClient.connectedNodes.await()
@@ -146,6 +278,10 @@ class WearSyncManager private constructor(context: Context) : MessageClient.OnMe
 
     companion object {
         private const val TAG = "WearSyncManager"
+        /** Same applicationId on phone + wear. */
+        const val APP_PACKAGE = "com.tanniscoring.app"
+        private const val WEAR_MAIN_ACTIVITY = "com.tanniscoring.wear.MainActivity"
+        private const val MARKET_URI = "market://details?id=$APP_PACKAGE"
 
         private val _incomingState = MutableSharedFlow<MatchStateDto>(
             replay = 1,

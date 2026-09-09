@@ -46,6 +46,8 @@ class MainActivity : ComponentActivity() {
                             wearConnected = ui.wearConnected,
                             wearNodeCount = ui.wearNodeCount,
                             onRequestState = { viewModel.requestWearState() },
+                            onOpenWearApp = { viewModel.openWearApp(this@MainActivity) },
+                            onInstallWearApp = { viewModel.openWearCompanionStore(this@MainActivity) },
                         )
                     }
                 }

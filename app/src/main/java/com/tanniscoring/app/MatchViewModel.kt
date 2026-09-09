@@ -1,6 +1,7 @@
 package com.tanniscoring.app
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.tanniscoring.app.data.MatchRepository
@@ -89,6 +90,17 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
     fun requestWearState() {
         viewModelScope.launch { sync.requestState() }
     }
+
+    /** Launch Wear MainActivity on connected watch nodes. */
+    fun openWearApp(context: Context) {
+        viewModelScope.launch { sync.openWearApp(context) }
+    }
+
+    /** Open Play Store on watch for same package; phone Play fallback. */
+    fun openWearCompanionStore(context: Context) {
+        viewModelScope.launch { sync.openWearCompanionStore(context) }
+    }
+
 
     private fun applyRemoteState(dto: MatchStateDto) {
         if (!dto.matchActive) {

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +37,8 @@ fun ScoreboardIdleScreen(
     wearConnected: Boolean,
     wearNodeCount: Int,
     onRequestState: () -> Unit,
+    onOpenWearApp: () -> Unit,
+    onInstallWearApp: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -87,6 +90,24 @@ fun ScoreboardIdleScreen(
             ) {
                 Text(stringResource(R.string.refresh_wear_state))
             }
+            OutlinedButton(
+                onClick = onOpenWearApp,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.wear_open_app))
+            }
+            Button(
+                onClick = onInstallWearApp,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.wear_install_app))
+            }
+            Text(
+                text = stringResource(R.string.wear_auto_install_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
 
             if (history.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
