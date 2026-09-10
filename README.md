@@ -1,4 +1,4 @@
-# Tanniscoring (테니스코어링) 1.0.1
+# Tanniscoring (테니스코어링) 1.0.2
 
 Android 폰 + Wear OS 테니스 스코어 앱.
 
@@ -6,7 +6,7 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 
 | | |
 |---|---|
-| Version | **1.0.1** (versionCode **11**) |
+| Version | **1.0.2** (versionCode **12**) |
 | applicationId (phone **and** wear) | `com.tanniscoring.app` |
 | minSdk | Phone 26 / Wear 30 |
 | UI | Jetpack Compose + Wear Compose (한국어) |
@@ -30,7 +30,7 @@ Old builds used a separate Wear package. Remove leftovers first, then install 1.
 1. **Uninstall old phone app** `com.tanniscoring.app` (any previous version).
 2. **Uninstall old Wear package** `com.tanniscoring.wear` from the Galaxy Watch / Wear OS device (Settings → Apps, or `adb uninstall com.tanniscoring.wear`).
 3. Install **1.0.0** from **Play Internal testing** *or* the signed phone APK/AAB:
-   - Play/APK: install the phone app (`tanniscoring-app-1.0.1.*`). Wear may auto-install via embed; if not, use phone **워치에 설치** or watch Play.
+   - Play/APK: install the phone app (`tanniscoring-app-1.0.2.*`). Wear may auto-install via embed; if not, use phone **워치에 설치** or watch Play.
 4. On the phone idle screen tap **워치 앱 열기**, or open **테니스코어링** from the **watch launcher**.
 5. On the watch tap **경기 시작** → phone shows the live scoreboard (“워치에서 경기를 시작하세요” until then).
 
