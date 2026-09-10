@@ -6,7 +6,7 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 
 | | |
 |---|---|
-| Version | **1.0.2** (versionCode **12**) |
+| Version | **1.0.2** (versionCode phone **13** / wear **14**) |
 | applicationId (phone **and** wear) | `com.tanniscoring.app` |
 | minSdk | Phone 26 / Wear 30 |
 | UI | Jetpack Compose + Wear Compose (한국어) |
