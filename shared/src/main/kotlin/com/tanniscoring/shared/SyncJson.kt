@@ -165,6 +165,29 @@ object SyncJson {
         )
     }
 
+
+    fun encodeServe(dto: ServeInfoDto): String = buildString {
+        append('{')
+        append("\"speedKmH\":")
+        if (dto.speedKmH == null) append("null") else append(dto.speedKmH.toInt())
+        append(",\"label\":\"").append(escape(dto.label)).append('"')
+        append(",\"flash\":").append(dto.flash)
+        append(",\"flashToken\":").append(dto.flashToken)
+        append(",\"active\":").append(dto.active)
+        append('}')
+    }
+
+    fun decodeServe(json: String): ServeInfoDto {
+        val map = parseObject(json)
+        return ServeInfoDto(
+            speedKmH = map["speedKmH"]?.toFloatOrNull(),
+            label = map["label"] ?: ServeLabel.FIRST.wire,
+            flash = map["flash"] == "true",
+            flashToken = map["flashToken"]?.toLongOrNull() ?: 0L,
+            active = map["active"]?.let { it == "true" } ?: true,
+        )
+    }
+
     private fun escape(s: String): String =
         s.replace("\\", "\\\\").replace("\"", "\\\"")
 

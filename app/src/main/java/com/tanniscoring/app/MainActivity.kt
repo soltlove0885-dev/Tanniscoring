@@ -87,6 +87,10 @@ class MainActivity : ComponentActivity() {
                                 } else {
                                     null
                                 },
+                                onToggleServeSpeed = { viewModel.toggleServeSpeed() },
+                                onCycleServeCalibration = { viewModel.cycleServeCalibration() },
+                                onClearServeFlash = { viewModel.clearServeFlash() },
+                                motionAnalyzer = viewModel.motionAnalyzer,
                             )
                         }
                         else -> {

@@ -15,6 +15,7 @@ import com.google.android.gms.wearable.Wearable
 import com.tanniscoring.app.R
 import com.tanniscoring.shared.MatchStateDto
 import com.tanniscoring.shared.ScoringEventDto
+import com.tanniscoring.shared.ServeInfoDto
 import com.tanniscoring.shared.SyncJson
 import com.tanniscoring.shared.SyncPaths
 import kotlinx.coroutines.CoroutineScope
@@ -137,6 +138,32 @@ class WearSyncManager private constructor(context: Context) : MessageClient.OnMe
         }
     }
 
+
+
+    /** Push phone-side serve speed / label flash to Wear (optional small text). */
+    suspend fun sendServe(dto: ServeInfoDto, retries: Int = 2) {
+        val payload = SyncJson.encodeServe(dto).toByteArray(Charsets.UTF_8)
+        var attempt = 0
+        while (attempt < retries) {
+            attempt++
+            try {
+                val nodes = nodeClient.connectedNodes.await()
+                updateNodeState(nodes.size)
+                if (nodes.isEmpty()) {
+                    if (attempt < retries) delay(300L * attempt)
+                    continue
+                }
+                for (node in nodes) {
+                    messageClient.sendMessage(node.id, SyncPaths.PATH_SERVE, payload).await()
+                }
+                Log.d(TAG, "sendServe label=${dto.label} speed=${dto.speedKmH} nodes=${nodes.size}")
+                return
+            } catch (e: Exception) {
+                Log.w(TAG, "sendServe attempt $attempt failed", e)
+                if (attempt < retries) delay(300L * attempt)
+            }
+        }
+    }
 
     /**
      * Launch Wear [MainActivity] on connected nodes (same applicationId).

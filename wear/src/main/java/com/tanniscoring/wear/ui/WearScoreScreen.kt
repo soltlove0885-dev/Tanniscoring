@@ -137,6 +137,17 @@ fun WearScoreScreen(
                     },
                     modifier = Modifier.padding(top = 2.dp),
                 )
+                val serveText = state.serveWearText
+                if (!match.isMatchOver && serveText != null) {
+                    Text(
+                        text = serveText,
+                        style = MaterialTheme.typography.caption2,
+                        fontWeight = FontWeight.Bold,
+                        color = WearCourtColors.Serve,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 if (!match.isMatchOver) {
                     Text(
                         text = stringResource(R.string.long_press_undo),

@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tanniscoring.app.MatchUiState
 import com.tanniscoring.app.R
+import com.tanniscoring.app.serve.MotionServeAnalyzer
 import com.tanniscoring.shared.MatchMode
 import com.tanniscoring.shared.MatchState
 import com.tanniscoring.shared.Side
@@ -59,6 +60,10 @@ fun MatchScreen(
     onNewMatch: () -> Unit,
     onRequestState: () -> Unit = {},
     onBackToBracket: (() -> Unit)? = null,
+    onToggleServeSpeed: () -> Unit = {},
+    onCycleServeCalibration: () -> Unit = {},
+    onClearServeFlash: () -> Unit = {},
+    motionAnalyzer: MotionServeAnalyzer? = null,
 ) {
     val match = state.matchState ?: return
     val configuration = LocalConfiguration.current
@@ -69,6 +74,10 @@ fun MatchScreen(
             state = state,
             match = match,
             onToggleServer = onToggleServer,
+            onToggleServeSpeed = onToggleServeSpeed,
+            onCycleServeCalibration = onCycleServeCalibration,
+            onClearServeFlash = onClearServeFlash,
+            motionAnalyzer = motionAnalyzer,
         )
     } else {
         PortraitMatchScreen(
@@ -82,6 +91,10 @@ fun MatchScreen(
             onNewMatch = onNewMatch,
             onRequestState = onRequestState,
             onBackToBracket = onBackToBracket,
+            onToggleServeSpeed = onToggleServeSpeed,
+            onCycleServeCalibration = onCycleServeCalibration,
+            onClearServeFlash = onClearServeFlash,
+            motionAnalyzer = motionAnalyzer,
         )
     }
 }
@@ -92,6 +105,10 @@ private fun LandscapeScoreboard(
     state: MatchUiState,
     match: MatchState,
     onToggleServer: () -> Unit,
+    onToggleServeSpeed: () -> Unit,
+    onCycleServeCalibration: () -> Unit,
+    onClearServeFlash: () -> Unit,
+    motionAnalyzer: MotionServeAnalyzer?,
 ) {
     Box(
         modifier = Modifier
@@ -100,7 +117,9 @@ private fun LandscapeScoreboard(
             .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         Row(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = 56.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             LandscapeSideColumn(
@@ -142,7 +161,7 @@ private fun LandscapeScoreboard(
             )
         }
 
-        // Minimal status strip at bottom
+        // Serve speed flash + camera overlay (landscape court board)
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -150,17 +169,70 @@ private fun LandscapeScoreboard(
                 .padding(bottom = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            MatchStatusLine(match)
-            Text(
-                text = if (state.wearConnected) {
-                    stringResource(R.string.wear_connected)
+            if (!match.isMatchOver) {
+                ServeSpeedFlashBanner(
+                    serve = state.serveSession,
+                    large = true,
+                    onFlashConsumed = onClearServeFlash,
+                    modifier = Modifier.fillMaxWidth(0.72f),
+                )
+                Spacer(Modifier.height(4.dp))
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                if (state.serveSpeedOn) {
+                    ServeCameraOverlay(
+                        enabled = true,
+                        analyzer = motionAnalyzer,
+                        modifier = Modifier
+                            .width(120.dp)
+                            .height(72.dp),
+                    )
                 } else {
-                    stringResource(R.string.wear_disconnected)
-                },
-                style = MaterialTheme.typography.labelSmall,
-                color = CourtColors.TextMuted,
-                fontSize = 10.sp,
-            )
+                    Spacer(Modifier.width(120.dp))
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    MatchStatusLine(match)
+                    Text(
+                        text = if (state.wearConnected) {
+                            stringResource(R.string.wear_connected)
+                        } else {
+                            stringResource(R.string.wear_disconnected)
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = CourtColors.TextMuted,
+                        fontSize = 10.sp,
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = if (state.serveSpeedOn) {
+                            stringResource(R.string.serve_speed_on)
+                        } else {
+                            stringResource(R.string.serve_speed_off)
+                        },
+                        color = if (state.serveSpeedOn) CourtColors.Serve else CourtColors.TextMuted,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(CourtColors.ServeContainer)
+                            .clickable(onClick = onToggleServeSpeed)
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                    )
+                    Text(
+                        text = state.serveSession.calibrationPreset,
+                        color = CourtColors.TextMuted,
+                        fontSize = 9.sp,
+                        modifier = Modifier
+                            .clickable(onClick = onCycleServeCalibration)
+                            .padding(top = 2.dp, end = 4.dp),
+                    )
+                }
+            }
         }
     }
 }
@@ -263,6 +335,10 @@ private fun PortraitMatchScreen(
     onNewMatch: () -> Unit,
     onRequestState: () -> Unit,
     onBackToBracket: (() -> Unit)? = null,
+    onToggleServeSpeed: () -> Unit = {},
+    onCycleServeCalibration: () -> Unit = {},
+    onClearServeFlash: () -> Unit = {},
+    motionAnalyzer: MotionServeAnalyzer? = null,
 ) {
     Scaffold(
         containerColor = CourtColors.Black,
@@ -382,6 +458,33 @@ private fun PortraitMatchScreen(
 
             Spacer(Modifier.height(12.dp))
             MatchStatusLine(match)
+
+            if (!match.isMatchOver) {
+                Spacer(Modifier.height(10.dp))
+                ServeSpeedFlashBanner(
+                    serve = state.serveSession,
+                    large = false,
+                    onFlashConsumed = onClearServeFlash,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(8.dp))
+                ServeSpeedToggleRow(
+                    speedOn = state.serveSpeedOn,
+                    preset = state.serveSession.calibrationPreset,
+                    onToggle = onToggleServeSpeed,
+                    onCyclePreset = onCycleServeCalibration,
+                )
+                if (state.serveSpeedOn) {
+                    Spacer(Modifier.height(8.dp))
+                    ServeCameraOverlay(
+                        enabled = true,
+                        analyzer = motionAnalyzer,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(140.dp),
+                    )
+                }
+            }
 
             if (match.setHistory.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))

@@ -9,6 +9,7 @@ import com.tanniscoring.shared.MatchState
 import com.tanniscoring.shared.MatchStateDto
 import com.tanniscoring.shared.PlayerNames
 import com.tanniscoring.shared.ScoringEventDto
+import com.tanniscoring.shared.ServeInfoDto
 import com.tanniscoring.shared.Side
 import com.tanniscoring.shared.SyncTypes
 import com.tanniscoring.shared.TennisScoringEngine
@@ -42,6 +43,18 @@ class WearMatchViewModel(application: Application) : AndroidViewModel(applicatio
         }
         viewModelScope.launch {
             sync.stateRequests.collect { pushCurrentStateToPhone() }
+        }
+        viewModelScope.launch {
+            sync.incomingServe.collect { dto ->
+                _uiState.update {
+                    it.copy(
+                        serveSpeedKmH = dto.speedKmH,
+                        serveLabel = if (dto.active) dto.label else null,
+                        serveFlash = dto.flash && dto.active,
+                        serveFlashToken = dto.flashToken,
+                    )
+                }
+            }
         }
         sync.startListening()
         // On open: resend current state so phone scoreboard catches up.
@@ -190,4 +203,21 @@ data class WearUiState(
     val draftBestOf: Int = 3,
     val matchState: MatchState? = null,
     val canUndo: Boolean = false,
-)
+    /** Optional phone camera serve estimate (추정 km/h). */
+    val serveSpeedKmH: Float? = null,
+    val serveLabel: String? = null,
+    val serveFlash: Boolean = false,
+    val serveFlashToken: Long = 0L,
+) {
+    val serveWearText: String?
+        get() {
+            val label = serveLabel ?: return null
+            val sp = serveSpeedKmH?.toInt()?.toString()
+            return when {
+                label.equals("fault", true) && sp != null -> "폴트 · 추정 $sp"
+                label.equals("fault", true) -> "폴트"
+                sp != null -> "$label · 추정 $sp"
+                else -> label
+            }
+        }
+}

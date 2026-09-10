@@ -73,4 +73,17 @@
     <string name="tournament_status_live">진행 중</string>
     <string name="tournament_status_done">종료</string>
     <string name="tournament_back_to_bracket">대진표로</string>
+
+    <string name="serve_speed_on">스피드 온</string>
+    <string name="serve_speed_off">스피드 오프</string>
+    <string name="serve_label_1st">1st 서브</string>
+    <string name="serve_label_2nd">2nd 서브</string>
+    <string name="serve_label_fault">폴트</string>
+    <string name="serve_waiting_1st">1st 대기</string>
+    <string name="serve_waiting_2nd">2nd 대기</string>
+    <string name="serve_speed_estimate_fmt">추정 %1$s km/h</string>
+    <string name="serve_estimate_disclaimer">카메라 모션 추정 · 레이더 아님</string>
+    <string name="serve_cal_fmt">보정: %1$s</string>
+    <string name="serve_camera_permission">카메라 권한 필요</string>
+    <string name="serve_camera_hint">상단=서브 감지</string>
 </resources>

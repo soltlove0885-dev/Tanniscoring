@@ -8,6 +8,7 @@ import com.google.android.gms.wearable.NodeClient
 import com.google.android.gms.wearable.Wearable
 import com.tanniscoring.shared.MatchStateDto
 import com.tanniscoring.shared.ScoringEventDto
+import com.tanniscoring.shared.ServeInfoDto
 import com.tanniscoring.shared.SyncJson
 import com.tanniscoring.shared.SyncPaths
 import kotlinx.coroutines.CoroutineScope
@@ -40,6 +41,7 @@ class PhoneSyncManager private constructor(context: Context) :
 
     val incomingEvents: SharedFlow<ScoringEventDto> = Companion.incomingEvents
     val stateRequests: SharedFlow<Unit> = Companion.stateRequests
+    val incomingServe: SharedFlow<ServeInfoDto> = Companion.incomingServe
 
     fun startListening() {
         messageClient.addListener(this)
@@ -97,6 +99,12 @@ class PhoneSyncManager private constructor(context: Context) :
         private val _stateRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 8)
         val stateRequests: SharedFlow<Unit> = _stateRequests.asSharedFlow()
 
+        private val _incomingServe = MutableSharedFlow<ServeInfoDto>(
+            replay = 1,
+            extraBufferCapacity = 8,
+        )
+        val incomingServe: SharedFlow<ServeInfoDto> = _incomingServe.asSharedFlow()
+
         @Volatile
         private var instance: PhoneSyncManager? = null
 
@@ -122,6 +130,13 @@ class PhoneSyncManager private constructor(context: Context) :
                 SyncPaths.PATH_REQUEST_STATE -> {
                     Log.d(TAG, "REQUEST_STATE from phone")
                     _stateRequests.tryEmit(Unit)
+                }
+                SyncPaths.PATH_SERVE -> {
+                    val json = data.toString(Charsets.UTF_8)
+                    Log.d(TAG, "Serve from phone: $json")
+                    runCatching { SyncJson.decodeServe(json) }
+                        .onSuccess { _incomingServe.tryEmit(it) }
+                        .onFailure { Log.e(TAG, "decode serve failed", it) }
                 }
                 else -> Log.d(TAG, "Ignoring path=$path")
             }
