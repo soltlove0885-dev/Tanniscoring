@@ -17,6 +17,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,8 +42,15 @@ fun ScoreboardIdleScreen(
     onInstallWearApp: () -> Unit,
 ) {
     Scaffold(
+        containerColor = CourtColors.Black,
         topBar = {
-            TopAppBar(title = { Text(stringResource(R.string.app_name)) })
+            TopAppBar(
+                title = { Text(stringResource(R.string.app_name)) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = CourtColors.NearBlack,
+                    titleContentColor = CourtColors.TextPrimary,
+                ),
+            )
         },
     ) { padding ->
         Column(

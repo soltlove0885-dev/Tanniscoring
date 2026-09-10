@@ -1,12 +1,14 @@
 package com.tanniscoring.wear
 
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.wear.compose.material.MaterialTheme
+import com.tanniscoring.wear.ui.TanniscoringWearTheme
 import com.tanniscoring.wear.ui.WearScoreScreen
 
 class MainActivity : ComponentActivity() {
@@ -16,8 +18,20 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme {
+            TanniscoringWearTheme {
                 val ui by viewModel.uiState.collectAsState()
+                val matchActive = ui.matchStarted &&
+                    ui.matchState != null &&
+                    ui.matchState?.isMatchOver != true
+
+                LaunchedEffect(matchActive) {
+                    if (matchActive) {
+                        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    } else {
+                        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    }
+                }
+
                 WearScoreScreen(
                     state = ui,
                     onPointA = { viewModel.pointWonA() },
@@ -35,5 +49,9 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         viewModel.resyncToPhone()
     }
-}
 
+    override fun onDestroy() {
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        super.onDestroy()
+    }
+}

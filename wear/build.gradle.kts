@@ -23,8 +23,8 @@ android {
         applicationId = "com.tanniscoring.app"
         minSdk = 30
         targetSdk = 36
-        versionCode = 14
-        versionName = "1.0.2"
+        versionCode = 16
+        versionName = "1.1.0"
     }
 
 
