@@ -8,7 +8,7 @@ package com.tanniscoring.shared
  * - Deuce when both at 40; then Advantage / back to Deuce / game
  * - Game: win by 2 from deuce, or from 40 when opponent below 40
  * - Set: first to 6 games with 2-game lead; at 6-6 → tiebreak to 7 (win by 2)
- * - Match: best-of-3 or best-of-5 via [MatchFormat]
+ * - Match: best-of-1, best-of-3, or best-of-5 via [MatchFormat]
  * - Server: changes after each completed game
  * - Tiebreak server: first point by the player due to serve; then switch after
  *   the 1st point and every 2 points thereafter (after odd totals: 1, 3, 5, …).

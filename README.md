@@ -1,4 +1,4 @@
-# Tanniscoring (테니스코어링) 1.1.0
+# Tanniscoring (테니스코어링) 1.2.0
 
 Android 폰 + Wear OS 테니스 스코어 앱.
 
@@ -6,7 +6,7 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 
 | | |
 |---|---|
-| Version | **1.1.0** (versionCode phone **15** / wear **16**) |
+| Version | **1.2.0** (versionCode phone **17** / wear **18**) |
 | applicationId (phone **and** wear) | `com.tanniscoring.app` |
 | minSdk | Phone 26 / Wear 30 |
 | UI | Jetpack Compose + Wear Compose (한국어) |
@@ -16,24 +16,33 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 ## Product (simple)
 
 - **Wear OS watch is primary**: start match on watch → **tap A/B = point**, **long-press = undo**
-- **Phone is live scoreboard only** (optional A/B/undo that send events to Wear)
-- **1.1.0 UI**: OLED dark court palette; phone **landscape = huge scoreboard-only**; clear **server highlight**; **keep screen on** during active match (phone + wear)
+- **Phone is live scoreboard** (optional A/B/undo that send events to Wear)
+- **Tournament mode (1.2.0)**: phone creates 4/8-player single-elimination bracket; tap a match to start on Wear; winner advances automatically
+- **1.1.0+ UI**: OLED dark court palette; phone **landscape = huge scoreboard-only**; clear **server highlight**; **keep screen on** during active match (phone + wear)
 - Real-time sync via **MessageClient** + **WearableListenerService**
 - Same `applicationId` on phone + wear; phone embeds wear with `wearApp(project(":wear"))` (secondary — Galaxy Watch auto-install often fails)
-- Phone idle screen: **워치 앱 열기** / **워치에 설치** via RemoteActivityHelper (Play `com.tanniscoring.app`)
+- Phone idle screen: **토너먼트** / **워치 앱 열기** / **워치에 설치**
 
 ---
 
-## Clean install from scratch (required before 1.0.0)
+## Tournament UX
 
-Old builds used a separate Wear package. Remove leftovers first, then install 1.0.0 once.
+1. Phone idle → **토너먼트** → choose **4 or 8** players, default best-of **1 / 3 / 5**, enter names → **대진표 생성**
+2. Bracket shows rounds (8강→준결승→결승 or 준결승→결승). Tap a **준비** match to send `START` to Wear and open the phone scoreboard
+3. Optional: tap the format chip on a match card to override best-of for that match only (cycles 1→3→5)
+4. Wear scores as usual; when the match ends, the phone advances the winner into the next bracket slot
+5. From the scoreboard use **대진표로** to return to the bracket; **진행 중 스코어보드** reopens the live match
+6. Wear still only scores the active match (phone selection drives who plays)
+
+---
+
+## Clean install from scratch
 
 1. **Uninstall old phone app** `com.tanniscoring.app` (any previous version).
-2. **Uninstall old Wear package** `com.tanniscoring.wear` from the Galaxy Watch / Wear OS device (Settings → Apps, or `adb uninstall com.tanniscoring.wear`).
-3. Install **1.0.0** from **Play Internal testing** *or* the signed phone APK/AAB:
-   - Play/APK: install the phone app (`tanniscoring-app-1.1.0.*`). Wear may auto-install via embed; if not, use phone **워치에 설치** or watch Play.
+2. **Uninstall old Wear package** `com.tanniscoring.wear` from the Galaxy Watch / Wear OS device if present.
+3. Install **1.2.0** phone APK/AAB (`tanniscoring-app-1.2.0.*`). Wear may auto-install via embed; if not, use phone **워치에 설치** or watch Play.
 4. On the phone idle screen tap **워치 앱 열기**, or open **테니스코어링** from the **watch launcher**.
-5. On the watch tap **경기 시작** → phone shows the live scoreboard (“워치에서 경기를 시작하세요” until then).
+5. Single match: watch **경기 시작** → phone scoreboard. Tournament: phone **토너먼트** → select match → watch scores.
 
 ### Verify
 
@@ -41,6 +50,7 @@ Old builds used a separate Wear package. Remove leftovers first, then install 1.
 - [ ] Wear package = `com.tanniscoring.app` (not `com.tanniscoring.wear`)
 - [ ] Watch: 경기 시작 → tap A/B → phone points update
 - [ ] Watch: long-press → undo on both
+- [ ] Tournament: create 4-player bracket → play semi → winner appears in final
 - [ ] Phone optional A/B/undo still works (events → Wear)
 
 ---
@@ -48,16 +58,16 @@ Old builds used a separate Wear package. Remove leftovers first, then install 1.
 ## Architecture
 
 ```
-:shared   Pure Kotlin — TennisScoringEngine, MatchState, SyncJson DTOs
+:shared   Pure Kotlin — TennisScoringEngine, MatchState, TournamentBracket, SyncJson
 :wear     Wear OS — scoring authority + MessageClient (applicationId = com.tanniscoring.app)
-:app      Phone — scoreboard + wearApp(:wear) embed (same applicationId)
+:app      Phone — scoreboard + tournament bracket + wearApp(:wear) embed
 ```
 
-**Wear is the source of truth.** Phone and Wear share `com.tanniscoring.app` so the Wearable Data Layer delivers messages.
+**Wear is the source of truth for scoring.** Phone owns tournament bracket state.
 
-1. Wear starts match → owns scoring engine
+1. Wear starts match (or phone tournament sends START) → Wear owns scoring engine
 2. Wear tap A/B / long-press undo → MessageClient `PATH_STATE` → phone
-3. Phone listener → scoreboard UI
+3. Phone listener → scoreboard UI (+ tournament advance on match over)
 4. Phone optional A/B/Undo → MessageClient `PATH_EVENT` → Wear
 5. On connect / open: Wear resends state; phone can `PATH_REQUEST_STATE`
 
@@ -69,21 +79,22 @@ No backend. Google Play Services Wearable Data Layer only.
 
 | Module | Role |
 |--------|------|
-| `:shared` | Scoring rules + unit tests |
+| `:shared` | Scoring rules + tournament bracket + unit tests |
 | `:wear` | Start match, large A/B taps, long-press undo, broadcast state |
-| `:app` | Live scoreboard (“워치에서 경기를 시작하세요”), optional mirror controls; embeds wear |
+| `:app` | Live scoreboard, tournament setup/bracket, optional mirror controls; embeds wear |
 
 ---
 
 ## Open in Android Studio
 
-1. **File → Open** the `Tanniscoring` folder (do not ZIP-import for day-to-day work)
+1. **File → Open** the `Tanniscoring` folder
 2. Android Studio Ladybug+ (AGP 8.7 / Kotlin 2.0 / Gradle 8.9)
 3. Gradle Sync → phone emulator (API 26+) + Wear OS emulator (API 30+), paired
 
 ```bash
 ./gradlew :shared:test
 ./gradlew :app:bundleRelease :app:assembleRelease
+./gradlew :wear:bundleRelease :wear:assembleRelease
 ```
 
 ---
@@ -92,7 +103,7 @@ No backend. Google Play Services Wearable Data Layer only.
 
 - Points: 0 → 15 → 30 → 40 · Deuce / Advantage / Game
 - Set: first to 6, win by 2; 6-6 → tiebreak to 7 (win by 2)
-- Match: best-of-3 (default) or best-of-5
+- Match: best-of-1, best-of-3 (default), or best-of-5
 - Server rotates after each game; TB first-point then every 2; after TB receiver serves next
 - Undo: stack-based last action restore
 
@@ -102,7 +113,7 @@ No backend. Google Play Services Wearable Data Layer only.
 
 ```
 Tanniscoring/
-├── app/      # Phone scoreboard (+ wearApp embed)
+├── app/      # Phone scoreboard + tournament (+ wearApp embed)
 ├── wear/     # Wear scoring authority
 ├── shared/   # Pure Kotlin + JUnit
 └── README.md
@@ -112,6 +123,6 @@ Tanniscoring/
 
 - No iOS / watchOS
 - No cloud / Firebase
-- History is local SharedPreferences only
+- History / tournament persistence is local SharedPreferences only
 
 Packaged for `soltlove0885-dev/Tanniscoring`.

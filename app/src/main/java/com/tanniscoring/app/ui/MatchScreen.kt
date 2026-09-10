@@ -58,6 +58,7 @@ fun MatchScreen(
     onEndMatch: () -> Unit,
     onNewMatch: () -> Unit,
     onRequestState: () -> Unit = {},
+    onBackToBracket: (() -> Unit)? = null,
 ) {
     val match = state.matchState ?: return
     val configuration = LocalConfiguration.current
@@ -80,6 +81,7 @@ fun MatchScreen(
             onEndMatch = onEndMatch,
             onNewMatch = onNewMatch,
             onRequestState = onRequestState,
+            onBackToBracket = onBackToBracket,
         )
     }
 }
@@ -260,6 +262,7 @@ private fun PortraitMatchScreen(
     onEndMatch: () -> Unit,
     onNewMatch: () -> Unit,
     onRequestState: () -> Unit,
+    onBackToBracket: (() -> Unit)? = null,
 ) {
     Scaffold(
         containerColor = CourtColors.Black,
@@ -452,6 +455,17 @@ private fun PortraitMatchScreen(
                     border = BorderStroke(1.dp, CourtColors.Border),
                 ) {
                     Text(stringResource(R.string.end_match), color = CourtColors.TextSecondary)
+                }
+            }
+
+            if (onBackToBracket != null) {
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onBackToBracket,
+                    modifier = Modifier.fillMaxWidth(),
+                    border = BorderStroke(1.dp, CourtColors.Border),
+                ) {
+                    Text(stringResource(R.string.tournament_back_to_bracket), color = CourtColors.Serve)
                 }
             }
 

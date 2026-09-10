@@ -169,22 +169,61 @@ object SyncJson {
         s.replace("\\", "\\\\").replace("\"", "\\\"")
 
     /**
-     * Very small flat-object parser: extracts "key":value pairs at the top level
-     * (ignores nested objects/arrays for scalar fields).
+     * Very small flat-object parser: extracts "key":value pairs at the **top level only**
+     * (skips nested objects/arrays so tournament matches do not pollute scalars).
      */
     private fun parseObject(json: String): Map<String, String> {
         val result = mutableMapOf<String, String>()
         val pattern = Regex("\"([^\"]+)\"\\s*:\\s*(\"(?:\\\\.|[^\"\\\\])*\"|true|false|null|-?\\d+)")
-        for (m in pattern.findAll(json)) {
-            val key = m.groupValues[1]
-            if (key == "setHistory") continue
-            var value = m.groupValues[2]
-            if (value.startsWith("\"") && value.endsWith("\"")) {
-                value = value.substring(1, value.length - 1)
-                    .replace("\\\"", "\"")
-                    .replace("\\\\", "\\")
+        var depth = 0
+        var i = 0
+        var inString = false
+        var escape = false
+        while (i < json.length) {
+            val c = json[i]
+            if (inString) {
+                when {
+                    escape -> escape = false
+                    c == '\\' -> escape = true
+                    c == '"' -> inString = false
+                }
+                i++
+                continue
             }
-            result[key] = value
+            when (c) {
+                '"' -> {
+                    // Look for a top-level key starting here
+                    if (depth == 1) {
+                        val m = pattern.find(json, i)
+                        if (m != null && m.range.first == i) {
+                            val key = m.groupValues[1]
+                            if (key != "setHistory" && key != "players" && key != "matches") {
+                                var value = m.groupValues[2]
+                                if (value.startsWith("\"") && value.endsWith("\"")) {
+                                    value = value.substring(1, value.length - 1)
+                                        .replace("\\\"", "\"")
+                                        .replace("\\\\", "\\")
+                                }
+                                result[key] = value
+                            }
+                            // Advance past the matched key:value, but do not skip nested structures —
+                            // arrays/objects after ':' are handled by depth tracking below if we
+                            // only consumed scalar matches. For array/object values the regex
+                            // does not match, so fall through.
+                            if (m.groupValues[2].let { it.startsWith("\"") || it == "true" || it == "false" || it == "null" || it.toLongOrNull() != null }) {
+                                i = m.range.last + 1
+                                continue
+                            }
+                        }
+                    }
+                    inString = true
+                }
+                '{' -> depth++
+                '}' -> depth--
+                '[' -> depth++
+                ']' -> depth--
+            }
+            i++
         }
         return result
     }
@@ -200,6 +239,148 @@ object SyncJson {
         val itemPattern = Regex("\\{\\s*\"gamesA\"\\s*:\\s*(\\d+)\\s*,\\s*\"gamesB\"\\s*:\\s*(\\d+)\\s*\\}")
         return itemPattern.findAll(arr).map {
             SetScoreDto(it.groupValues[1].toInt(), it.groupValues[2].toInt())
+        }.toList()
+    }
+
+    // --- Tournament persistence ---
+
+    fun encodeTournament(t: Tournament): String = buildString {
+        append('{')
+        append("\"id\":\"").append(escape(t.id)).append('"')
+        append(",\"playerCount\":").append(t.playerCount)
+        append(",\"defaultBestOf\":").append(t.defaultBestOf)
+        append(",\"activeMatchId\":")
+        if (t.activeMatchId == null) append("null") else append('"').append(escape(t.activeMatchId)).append('"')
+        append(",\"champion\":")
+        if (t.champion == null) append("null") else append('"').append(escape(t.champion)).append('"')
+        append(",\"createdAtEpochMs\":").append(t.createdAtEpochMs)
+        append(",\"players\":[")
+        t.players.forEachIndexed { i, p ->
+            if (i > 0) append(',')
+            append('"').append(escape(p)).append('"')
+        }
+        append(']')
+        append(",\"matches\":[")
+        t.matches.forEachIndexed { i, m ->
+            if (i > 0) append(',')
+            append(encodeBracketMatch(m))
+        }
+        append(']')
+        append('}')
+    }
+
+    fun decodeTournament(json: String): Tournament {
+        val map = parseObject(json)
+        val players = parseStringArray(json, "players")
+        val matches = parseBracketMatches(json)
+        return Tournament(
+            id = map["id"] ?: "",
+            playerCount = map["playerCount"]?.toIntOrNull() ?: players.size,
+            defaultBestOf = map["defaultBestOf"]?.toIntOrNull() ?: 3,
+            players = players,
+            matches = matches,
+            activeMatchId = map["activeMatchId"]?.takeIf { it != "null" },
+            champion = map["champion"]?.takeIf { it != "null" },
+            createdAtEpochMs = map["createdAtEpochMs"]?.toLongOrNull() ?: 0L,
+        )
+    }
+
+    private fun encodeBracketMatch(m: BracketMatch): String = buildString {
+        append('{')
+        append("\"id\":\"").append(escape(m.id)).append('"')
+        append(",\"round\":\"").append(escape(m.round.name)).append('"')
+        append(",\"slotIndex\":").append(m.slotIndex)
+        append(",\"playerA\":")
+        if (m.playerA == null) append("null") else append('"').append(escape(m.playerA)).append('"')
+        append(",\"playerB\":")
+        if (m.playerB == null) append("null") else append('"').append(escape(m.playerB)).append('"')
+        append(",\"bestOf\":").append(m.bestOf)
+        append(",\"status\":\"").append(escape(m.status.name)).append('"')
+        append(",\"winnerSide\":")
+        if (m.winnerSide == null) append("null") else append('"').append(escape(m.winnerSide.name)).append('"')
+        append(",\"setsA\":").append(m.setsA)
+        append(",\"setsB\":").append(m.setsB)
+        append(",\"nextMatchId\":")
+        if (m.nextMatchId == null) append("null") else append('"').append(escape(m.nextMatchId)).append('"')
+        append(",\"nextSlotIsA\":").append(m.nextSlotIsA)
+        append('}')
+    }
+
+    private fun parseBracketMatches(json: String): List<BracketMatch> {
+        val start = json.indexOf("\"matches\"")
+        if (start < 0) return emptyList()
+        val arrStart = json.indexOf('[', start)
+        if (arrStart < 0) return emptyList()
+        var depth = 0
+        var arrEnd = -1
+        for (i in arrStart until json.length) {
+            when (json[i]) {
+                '[' -> depth++
+                ']' -> {
+                    depth--
+                    if (depth == 0) {
+                        arrEnd = i
+                        break
+                    }
+                }
+            }
+        }
+        if (arrEnd < 0) return emptyList()
+        val arr = json.substring(arrStart + 1, arrEnd)
+        if (arr.isBlank()) return emptyList()
+        val items = mutableListOf<BracketMatch>()
+        var objDepth = 0
+        var objStart = -1
+        for (i in arr.indices) {
+            when (arr[i]) {
+                '{' -> {
+                    if (objDepth == 0) objStart = i
+                    objDepth++
+                }
+                '}' -> {
+                    objDepth--
+                    if (objDepth == 0 && objStart >= 0) {
+                        items.add(decodeBracketMatch(arr.substring(objStart, i + 1)))
+                        objStart = -1
+                    }
+                }
+            }
+        }
+        return items
+    }
+
+    private fun decodeBracketMatch(json: String): BracketMatch {
+        val map = parseObject(json)
+        return BracketMatch(
+            id = map["id"] ?: "",
+            round = runCatching { TournamentRound.valueOf(map["round"] ?: "FINAL") }
+                .getOrDefault(TournamentRound.FINAL),
+            slotIndex = map["slotIndex"]?.toIntOrNull() ?: 0,
+            playerA = map["playerA"]?.takeIf { it != "null" },
+            playerB = map["playerB"]?.takeIf { it != "null" },
+            bestOf = map["bestOf"]?.toIntOrNull() ?: 3,
+            status = runCatching { BracketMatchStatus.valueOf(map["status"] ?: "PENDING") }
+                .getOrDefault(BracketMatchStatus.PENDING),
+            winnerSide = map["winnerSide"]?.takeIf { it != "null" }
+                ?.let { runCatching { Side.valueOf(it) }.getOrNull() },
+            setsA = map["setsA"]?.toIntOrNull() ?: 0,
+            setsB = map["setsB"]?.toIntOrNull() ?: 0,
+            nextMatchId = map["nextMatchId"]?.takeIf { it != "null" },
+            nextSlotIsA = map["nextSlotIsA"] != "false",
+        )
+    }
+
+    private fun parseStringArray(json: String, key: String): List<String> {
+        val start = json.indexOf("\"$key\"")
+        if (start < 0) return emptyList()
+        val arrStart = json.indexOf('[', start)
+        val arrEnd = json.indexOf(']', arrStart)
+        if (arrStart < 0 || arrEnd < 0) return emptyList()
+        val arr = json.substring(arrStart + 1, arrEnd)
+        if (arr.isBlank()) return emptyList()
+        val pattern = Regex("\"((?:\\\\.|[^\"\\\\])*)\"")
+        return pattern.findAll(arr).map {
+            it.groupValues[1].replace("\\\"", "\"").replace("\\\\", "\\")
         }.toList()
     }
 }

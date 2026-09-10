@@ -37,9 +37,12 @@ fun ScoreboardIdleScreen(
     history: List<MatchHistoryEntry>,
     wearConnected: Boolean,
     wearNodeCount: Int,
+    hasTournament: Boolean = false,
     onRequestState: () -> Unit,
     onOpenWearApp: () -> Unit,
     onInstallWearApp: () -> Unit,
+    onTournament: () -> Unit = {},
+    onResumeTournament: () -> Unit = {},
 ) {
     Scaffold(
         containerColor = CourtColors.Black,
@@ -75,6 +78,20 @@ fun ScoreboardIdleScreen(
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(8.dp))
+            Button(
+                onClick = onTournament,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.tournament_mode))
+            }
+            if (hasTournament) {
+                OutlinedButton(
+                    onClick = onResumeTournament,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.tournament_resume))
+                }
+            }
             Text(
                 text = if (wearConnected) {
                     stringResource(R.string.wear_status_paired_hint)

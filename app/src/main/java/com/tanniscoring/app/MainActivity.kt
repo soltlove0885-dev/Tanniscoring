@@ -16,6 +16,8 @@ import com.tanniscoring.app.ui.CourtColors
 import com.tanniscoring.app.ui.MatchScreen
 import com.tanniscoring.app.ui.ScoreboardIdleScreen
 import com.tanniscoring.app.ui.TanniscoringTheme
+import com.tanniscoring.app.ui.TournamentBracketScreen
+import com.tanniscoring.app.ui.TournamentSetupScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -33,7 +35,9 @@ class MainActivity : ComponentActivity() {
                     val ui by viewModel.uiState.collectAsState()
                     val matchActive = ui.matchStarted &&
                         ui.matchState != null &&
-                        ui.matchState?.isMatchOver != true
+                        ui.matchState?.isMatchOver != true &&
+                        (ui.screen == PhoneScreen.MATCH_SCOREBOARD ||
+                            (ui.screen == PhoneScreen.IDLE && ui.matchStarted))
 
                     LaunchedEffect(matchActive) {
                         if (matchActive) {
@@ -43,26 +47,61 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    if (ui.matchStarted && ui.matchState != null) {
-                        MatchScreen(
-                            state = ui,
-                            onPointA = { viewModel.pointWonA() },
-                            onPointB = { viewModel.pointWonB() },
-                            onUndo = { viewModel.undo() },
-                            onToggleServer = { viewModel.toggleServer() },
-                            onEndMatch = { viewModel.endMatch() },
-                            onNewMatch = { viewModel.resetToStart() },
-                            onRequestState = { viewModel.requestWearState() },
-                        )
-                    } else {
-                        ScoreboardIdleScreen(
-                            history = ui.history,
-                            wearConnected = ui.wearConnected,
-                            wearNodeCount = ui.wearNodeCount,
-                            onRequestState = { viewModel.requestWearState() },
-                            onOpenWearApp = { viewModel.openWearApp(this@MainActivity) },
-                            onInstallWearApp = { viewModel.openWearCompanionStore(this@MainActivity) },
-                        )
+                    when {
+                        ui.screen == PhoneScreen.TOURNAMENT_SETUP -> {
+                            TournamentSetupScreen(
+                                playerCount = ui.draftPlayerCount,
+                                playerNames = ui.draftPlayerNames,
+                                bestOf = ui.draftBestOf,
+                                onPlayerCountChange = viewModel::setDraftPlayerCount,
+                                onPlayerNameChange = viewModel::setDraftPlayerName,
+                                onBestOfChange = viewModel::setDraftBestOf,
+                                onCreate = { viewModel.createTournament() },
+                                onCancel = { viewModel.cancelTournamentSetup() },
+                            )
+                        }
+                        ui.screen == PhoneScreen.TOURNAMENT_BRACKET && ui.tournament != null -> {
+                            TournamentBracketScreen(
+                                tournament = ui.tournament!!,
+                                wearConnected = ui.wearConnected,
+                                onSelectMatch = viewModel::selectBracketMatch,
+                                onOpenScoreboard = { viewModel.openActiveScoreboard() },
+                                onCycleMatchBestOf = viewModel::cycleMatchBestOf,
+                                onEndTournament = { viewModel.endTournament() },
+                                onBack = { viewModel.showIdle() },
+                            )
+                        }
+                        (ui.screen == PhoneScreen.MATCH_SCOREBOARD || ui.screen == PhoneScreen.IDLE) &&
+                            ui.matchStarted && ui.matchState != null -> {
+                            MatchScreen(
+                                state = ui,
+                                onPointA = { viewModel.pointWonA() },
+                                onPointB = { viewModel.pointWonB() },
+                                onUndo = { viewModel.undo() },
+                                onToggleServer = { viewModel.toggleServer() },
+                                onEndMatch = { viewModel.endMatch() },
+                                onNewMatch = { viewModel.resetToStart() },
+                                onRequestState = { viewModel.requestWearState() },
+                                onBackToBracket = if (ui.tournament != null) {
+                                    { viewModel.showBracket() }
+                                } else {
+                                    null
+                                },
+                            )
+                        }
+                        else -> {
+                            ScoreboardIdleScreen(
+                                history = ui.history,
+                                wearConnected = ui.wearConnected,
+                                wearNodeCount = ui.wearNodeCount,
+                                hasTournament = ui.tournament != null,
+                                onRequestState = { viewModel.requestWearState() },
+                                onOpenWearApp = { viewModel.openWearApp(this@MainActivity) },
+                                onInstallWearApp = { viewModel.openWearCompanionStore(this@MainActivity) },
+                                onTournament = { viewModel.openTournamentSetup() },
+                                onResumeTournament = { viewModel.showBracket() },
+                            )
+                        }
                     }
                 }
             }

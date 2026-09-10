@@ -21,18 +21,22 @@ enum class PointValue(val display: String) {
 }
 
 /**
- * Match format: best-of-3 (default) or best-of-5.
+ * Match format: best-of-1, best-of-3 (default), or best-of-5.
  * setsToWin = (bestOf + 1) / 2
  */
 enum class MatchFormat(val bestOf: Int) {
+    BEST_OF_1(1),
     BEST_OF_3(3),
     BEST_OF_5(5);
 
     val setsToWin: Int get() = (bestOf + 1) / 2
 
     companion object {
-        fun fromBestOf(bestOf: Int): MatchFormat =
-            if (bestOf >= 5) BEST_OF_5 else BEST_OF_3
+        fun fromBestOf(bestOf: Int): MatchFormat = when {
+            bestOf <= 1 -> BEST_OF_1
+            bestOf >= 5 -> BEST_OF_5
+            else -> BEST_OF_3
+        }
     }
 }
 
