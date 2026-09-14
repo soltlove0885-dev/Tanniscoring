@@ -391,4 +391,93 @@ class TennisScoringEngineTest {
         other.pointWon(Side.A) // 2-1 total 3, switch → A
         assertEquals(Side.A, other.currentState().server)
     }
+
+    @Test
+    fun `no-ad deuce next point wins game`() {
+        engine.startMatch(PlayerNames("A", "B"), MatchFormat.BEST_OF_3, noAd = true)
+        repeat(3) { engine.pointWon(Side.A) }
+        repeat(3) { engine.pointWon(Side.B) }
+        var s = engine.currentState()
+        assertTrue(s.noAd)
+        assertTrue(s.isDeuce)
+        assertFalse(s.advantageA)
+        assertFalse(s.advantageB)
+
+        engine.pointWon(Side.A) // sudden death — A wins game
+        s = engine.currentState()
+        assertEquals(1, s.gamesA)
+        assertEquals(0, s.gamesB)
+        assertEquals("0", s.pointDisplayA)
+        assertEquals("0", s.pointDisplayB)
+        assertFalse(s.isDeuce)
+        assertFalse(s.advantageA)
+    }
+
+    @Test
+    fun `no-ad never reaches advantage display`() {
+        engine.startMatch(PlayerNames("A", "B"), MatchFormat.BEST_OF_3, noAd = true)
+        repeat(3) { engine.pointWon(Side.A) }
+        repeat(3) { engine.pointWon(Side.B) }
+        engine.pointWon(Side.B) // B wins from deuce
+        val s = engine.currentState()
+        assertEquals(0, s.gamesA)
+        assertEquals(1, s.gamesB)
+        assertFalse(s.advantageA)
+        assertFalse(s.advantageB)
+    }
+
+    @Test
+    fun `standard ad still works when noAd false`() {
+        engine.startMatch(PlayerNames("A", "B"), MatchFormat.BEST_OF_3, noAd = false)
+        repeat(3) { engine.pointWon(Side.A) }
+        repeat(3) { engine.pointWon(Side.B) }
+        engine.pointWon(Side.A)
+        val s = engine.currentState()
+        assertTrue(s.advantageA)
+        assertEquals(0, s.gamesA)
+    }
+
+    @Test
+    fun `no-ad sync roundtrip preserves flag`() {
+        engine.startMatch(
+            PlayerNames("김철수", "이영희"),
+            MatchFormat.BEST_OF_3,
+            MatchMode.SINGLES,
+            Side.A,
+            noAd = true,
+        )
+        val dto = engine.currentState().toDto()
+        assertTrue(dto.noAd)
+        val json = SyncJson.encodeState(dto)
+        val decoded = SyncJson.decodeState(json)
+        assertTrue(decoded.noAd)
+        assertTrue(decoded.toMatchState().noAd)
+
+        val event = ScoringEventDto(
+            type = SyncTypes.START,
+            playerA = "A",
+            playerB = "B",
+            bestOf = 3,
+            noAd = true,
+            sequence = 1,
+        )
+        val ej = SyncJson.encodeEvent(event)
+        val ed = SyncJson.decodeEvent(ej)
+        assertEquals(true, ed.noAd)
+    }
+
+    @Test
+    fun `no-ad undo after sudden death restores deuce`() {
+        engine.startMatch(PlayerNames("A", "B"), MatchFormat.BEST_OF_3, noAd = true)
+        repeat(3) { engine.pointWon(Side.A) }
+        repeat(3) { engine.pointWon(Side.B) }
+        engine.pointWon(Side.A)
+        assertEquals(1, engine.currentState().gamesA)
+        engine.undo()
+        val s = engine.currentState()
+        assertEquals(0, s.gamesA)
+        assertTrue(s.isDeuce)
+        assertTrue(s.noAd)
+    }
+
 }

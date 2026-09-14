@@ -14,17 +14,17 @@ object CourtColors {
     val SurfaceCard = Color(0xFF1E1E1E)
     val Border = Color(0xFF2A2A2A)
 
-    val TextPrimary = Color(0xFFE8E8E8)
+    val TextPrimary = Color(0xFFF2F2F2)
     val TextSecondary = Color(0xFF9E9E9E)
     val TextMuted = Color(0xFF6B6B6B)
 
     /** Soft court green — primary accent (not neon). */
-    val Accent = Color(0xFF5A8F62)
-    val AccentDim = Color(0xFF3D6B44)
+    val Accent = Color(0xFF64B574)
+    val AccentDim = Color(0xFF3D7A4A)
     val AccentContainer = Color(0xFF1A2E1E)
 
     /** Muted clay / serve marker. */
-    val Serve = Color(0xFFC9A227)
+    val Serve = Color(0xFFE0B84A)
     val ServeDim = Color(0xFF8A7018)
     val ServeContainer = Color(0xFF2A2410)
 

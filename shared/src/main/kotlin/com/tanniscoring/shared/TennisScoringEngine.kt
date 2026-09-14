@@ -5,8 +5,10 @@ package com.tanniscoring.shared
  *
  * Rules (MVP):
  * - Points: 0 → 15 → 30 → 40
- * - Deuce when both at 40; then Advantage / back to Deuce / game
- * - Game: win by 2 from deuce, or from 40 when opponent below 40
+ * - Standard: Deuce when both at 40; then Advantage / back to Deuce / game
+ * - No-Ad (노애드): at deuce, next point wins the game (no advantage)
+ * - Game: win by 2 from deuce (standard), or sudden-death from deuce (no-ad),
+ *   or from 40 when opponent below 40
  * - Set: first to 6 games with 2-game lead; at 6-6 → tiebreak to 7 (win by 2)
  * - Match: best-of-1, best-of-3, or best-of-5 via [MatchFormat]
  * - Server: changes after each completed game
@@ -22,6 +24,7 @@ class TennisScoringEngine {
     private var playerB: String = "선수 B"
     private var format: MatchFormat = MatchFormat.BEST_OF_3
     private var mode: MatchMode = MatchMode.SINGLES
+    private var noAd: Boolean = false
 
     private var setsA: Int = 0
     private var setsB: Int = 0
@@ -45,11 +48,13 @@ class TennisScoringEngine {
         format: MatchFormat = MatchFormat.BEST_OF_3,
         mode: MatchMode = MatchMode.SINGLES,
         initialServer: Side = Side.A,
+        noAd: Boolean = false,
     ): MatchState {
         this.playerA = names.playerA.ifBlank { if (mode == MatchMode.DOUBLES) "팀 A" else "선수 A" }
         this.playerB = names.playerB.ifBlank { if (mode == MatchMode.DOUBLES) "팀 B" else "선수 B" }
         this.format = format
         this.mode = mode
+        this.noAd = noAd
         setsA = 0
         setsB = 0
         gamesA = 0
@@ -122,6 +127,7 @@ class TennisScoringEngine {
         playerB = state.playerB
         format = state.format
         mode = state.mode
+        noAd = state.noAd
         setsA = state.setsA
         setsB = state.setsB
         gamesA = state.gamesA
@@ -154,9 +160,17 @@ class TennisScoringEngine {
         val b = pointsB
 
         if (a >= 3 && b >= 3) {
-            when {
-                a >= b + 2 -> winGame(Side.A)
-                b >= a + 2 -> winGame(Side.B)
+            if (noAd) {
+                // No-Ad: at deuce, next point wins the game (no advantage).
+                when {
+                    a > b -> winGame(Side.A)
+                    b > a -> winGame(Side.B)
+                }
+            } else {
+                when {
+                    a >= b + 2 -> winGame(Side.A)
+                    b >= a + 2 -> winGame(Side.B)
+                }
             }
             return
         }
@@ -254,6 +268,7 @@ class TennisScoringEngine {
         val playerB: String,
         val format: MatchFormat,
         val mode: MatchMode,
+        val noAd: Boolean,
         val setsA: Int,
         val setsB: Int,
         val gamesA: Int,
@@ -272,7 +287,7 @@ class TennisScoringEngine {
     private fun pushHistory() {
         history.addLast(
             Snapshot(
-                playerA, playerB, format, mode,
+                playerA, playerB, format, mode, noAd,
                 setsA, setsB, gamesA, gamesB, pointsA, pointsB,
                 setHistory.toList(), inTiebreak, matchOver, winner, server,
                 tiebreakInitialServer, matchActive,
@@ -285,6 +300,7 @@ class TennisScoringEngine {
         playerB = s.playerB
         format = s.format
         mode = s.mode
+        noAd = s.noAd
         setsA = s.setsA
         setsB = s.setsB
         gamesA = s.gamesA
@@ -302,13 +318,15 @@ class TennisScoringEngine {
 
     private fun snapshot(): MatchState {
         val deuce = !inTiebreak && pointsA >= 3 && pointsB >= 3 && pointsA == pointsB
-        val advA = !inTiebreak && pointsA >= 3 && pointsB >= 3 && pointsA == pointsB + 1
-        val advB = !inTiebreak && pointsA >= 3 && pointsB >= 3 && pointsB == pointsA + 1
+        // Advantage never appears in no-ad (sudden death from deuce).
+        val advA = !noAd && !inTiebreak && pointsA >= 3 && pointsB >= 3 && pointsA == pointsB + 1
+        val advB = !noAd && !inTiebreak && pointsA >= 3 && pointsB >= 3 && pointsB == pointsA + 1
         return MatchState(
             playerA = playerA,
             playerB = playerB,
             format = format,
             mode = mode,
+            noAd = noAd,
             setsA = setsA,
             setsB = setsB,
             gamesA = gamesA,

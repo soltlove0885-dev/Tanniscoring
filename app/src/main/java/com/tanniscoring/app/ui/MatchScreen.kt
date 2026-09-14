@@ -314,15 +314,28 @@ private fun PortraitMatchScreen(
                 Spacer(Modifier.height(8.dp))
             }
 
-            Text(
-                text = if (match.mode == MatchMode.DOUBLES) {
-                    stringResource(R.string.doubles)
-                } else {
-                    stringResource(R.string.singles)
-                },
-                style = MaterialTheme.typography.labelLarge,
-                color = CourtColors.Accent,
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = if (match.mode == MatchMode.DOUBLES) {
+                        stringResource(R.string.doubles)
+                    } else {
+                        stringResource(R.string.singles)
+                    },
+                    style = MaterialTheme.typography.labelLarge,
+                    color = CourtColors.Accent,
+                )
+                if (match.noAd) {
+                    Text(
+                        text = stringResource(R.string.no_ad_badge),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = CourtColors.Serve,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
 
             Spacer(Modifier.height(8.dp))
 
@@ -612,14 +625,20 @@ private fun MatchStatusLine(match: MatchState) {
             color = CourtColors.Serve,
         )
         match.isDeuce -> Text(
-            stringResource(R.string.deuce),
+            if (match.noAd) stringResource(R.string.deuce_no_ad) else stringResource(R.string.deuce),
             style = MaterialTheme.typography.titleMedium,
-            color = CourtColors.TextSecondary,
+            color = if (match.noAd) CourtColors.Accent else CourtColors.TextSecondary,
         )
         match.advantageA || match.advantageB -> Text(
             stringResource(R.string.advantage),
             style = MaterialTheme.typography.titleMedium,
             color = CourtColors.TextSecondary,
+        )
+        match.noAd -> Text(
+            stringResource(R.string.no_ad_badge),
+            style = MaterialTheme.typography.labelLarge,
+            color = CourtColors.Accent,
+            fontWeight = FontWeight.Bold,
         )
     }
 }

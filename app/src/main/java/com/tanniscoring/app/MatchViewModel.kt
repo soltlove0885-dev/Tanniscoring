@@ -139,6 +139,7 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
                 screen = PhoneScreen.TOURNAMENT_SETUP,
                 draftPlayerCount = 4,
                 draftBestOf = 3,
+                draftNoAd = false,
                 draftPlayerNames = List(8) { "" },
             )
         }
@@ -150,6 +151,10 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setDraftBestOf(bestOf: Int) {
         _uiState.update { it.copy(draftBestOf = TournamentBracket.normalizeBestOf(bestOf)) }
+    }
+
+    fun setDraftNoAd(noAd: Boolean) {
+        _uiState.update { it.copy(draftNoAd = noAd) }
     }
 
     fun setDraftPlayerName(index: Int, name: String) {
@@ -166,6 +171,7 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
                 screen = PhoneScreen.IDLE,
                 draftPlayerCount = 4,
                 draftBestOf = 3,
+                draftNoAd = false,
                 draftPlayerNames = List(8) { "" },
             )
         }
@@ -175,7 +181,7 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
         val s = _uiState.value
         val names = s.draftPlayerNames.take(s.draftPlayerCount)
         if (names.any { it.isBlank() }) return
-        val tournament = TournamentBracket.create(names, s.draftBestOf)
+        val tournament = TournamentBracket.create(names, s.draftBestOf, defaultNoAd = s.draftNoAd)
         tournamentRepo.save(tournament)
         lastAdvancedTournamentMatchId = null
         _uiState.update {
@@ -185,6 +191,7 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
                 // Clear drafts immediately so a later setup never shows old names.
                 draftPlayerCount = 4,
                 draftBestOf = 3,
+                draftNoAd = false,
                 draftPlayerNames = List(8) { "" },
             )
         }
@@ -204,6 +211,7 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
                 tournament = null,
                 draftPlayerCount = 4,
                 draftBestOf = 3,
+                draftNoAd = false,
                 draftPlayerNames = List(8) { "" },
             )
         }
@@ -247,6 +255,7 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
                 tournament = null,
                 draftPlayerCount = 4,
                 draftBestOf = 3,
+                draftNoAd = false,
                 draftPlayerNames = List(8) { "" },
                 screen = if (it.matchStarted && it.matchState != null) {
                     PhoneScreen.MATCH_SCOREBOARD
@@ -270,6 +279,7 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
                 playerB = match.playerB,
                 bestOf = match.bestOf,
                 mode = MatchMode.SINGLES.name,
+                noAd = tournament.defaultNoAd,
                 sequence = nextSeq(),
             ),
         )
@@ -401,5 +411,6 @@ data class MatchUiState(
     val tournament: Tournament? = null,
     val draftPlayerCount: Int = 4,
     val draftBestOf: Int = 3,
+    val draftNoAd: Boolean = false,
     val draftPlayerNames: List<String> = List(8) { "" },
 )

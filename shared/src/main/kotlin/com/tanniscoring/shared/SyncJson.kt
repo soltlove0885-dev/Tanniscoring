@@ -15,6 +15,7 @@ object SyncJson {
         event.bestOf?.let { append(",\"bestOf\":").append(it) }
         event.mode?.let { append(",\"mode\":\"").append(escape(it)).append('"') }
         event.server?.let { append(",\"server\":\"").append(escape(it)).append('"') }
+        event.noAd?.let { append(",\"noAd\":").append(it) }
         append(",\"sequence\":").append(event.sequence)
         append('}')
     }
@@ -29,6 +30,7 @@ object SyncJson {
             bestOf = map["bestOf"]?.toIntOrNull(),
             mode = map["mode"],
             server = map["server"],
+            noAd = map["noAd"]?.let { it == "true" },
             sequence = map["sequence"]?.toLongOrNull() ?: 0L,
         )
     }
@@ -39,6 +41,7 @@ object SyncJson {
         append(",\"playerB\":\"").append(escape(dto.playerB)).append('"')
         append(",\"bestOf\":").append(dto.bestOf)
         append(",\"mode\":\"").append(escape(dto.mode)).append('"')
+        append(",\"noAd\":").append(dto.noAd)
         append(",\"setsA\":").append(dto.setsA)
         append(",\"setsB\":").append(dto.setsB)
         append(",\"gamesA\":").append(dto.gamesA)
@@ -73,6 +76,7 @@ object SyncJson {
             playerB = map["playerB"] ?: "",
             bestOf = map["bestOf"]?.toIntOrNull() ?: 3,
             mode = map["mode"] ?: MatchMode.SINGLES.name,
+            noAd = map["noAd"] == "true",
             setsA = map["setsA"]?.toIntOrNull() ?: 0,
             setsB = map["setsB"]?.toIntOrNull() ?: 0,
             gamesA = map["gamesA"]?.toIntOrNull() ?: 0,
@@ -250,6 +254,7 @@ object SyncJson {
         append("\"id\":\"").append(escape(t.id)).append('"')
         append(",\"playerCount\":").append(t.playerCount)
         append(",\"defaultBestOf\":").append(t.defaultBestOf)
+        append(",\"defaultNoAd\":").append(t.defaultNoAd)
         append(",\"activeMatchId\":")
         if (t.activeMatchId == null) append("null") else append('"').append(escape(t.activeMatchId)).append('"')
         append(",\"champion\":")
@@ -278,6 +283,7 @@ object SyncJson {
             id = map["id"] ?: "",
             playerCount = map["playerCount"]?.toIntOrNull() ?: players.size,
             defaultBestOf = map["defaultBestOf"]?.toIntOrNull() ?: 3,
+            defaultNoAd = map["defaultNoAd"] == "true",
             players = players,
             matches = matches,
             activeMatchId = map["activeMatchId"]?.takeIf { it != "null" },

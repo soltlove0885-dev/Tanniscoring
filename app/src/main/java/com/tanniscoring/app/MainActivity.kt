@@ -53,9 +53,11 @@ class MainActivity : ComponentActivity() {
                                 playerCount = ui.draftPlayerCount,
                                 playerNames = ui.draftPlayerNames,
                                 bestOf = ui.draftBestOf,
+                                noAd = ui.draftNoAd,
                                 onPlayerCountChange = viewModel::setDraftPlayerCount,
                                 onPlayerNameChange = viewModel::setDraftPlayerName,
                                 onBestOfChange = viewModel::setDraftBestOf,
+                                onNoAdChange = viewModel::setDraftNoAd,
                                 onCreate = { viewModel.createTournament() },
                                 onCancel = { viewModel.cancelTournamentSetup() },
                             )

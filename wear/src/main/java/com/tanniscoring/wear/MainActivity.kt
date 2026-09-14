@@ -41,6 +41,7 @@ class MainActivity : ComponentActivity() {
                     onToggleServer = { viewModel.toggleServer() },
                     onNewMatch = { viewModel.resetToStart() },
                     onEndMatch = { viewModel.exitToIdle() },
+                    onToggleNoAd = { viewModel.toggleDraftNoAd() },
                 )
             }
         }

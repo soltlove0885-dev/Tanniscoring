@@ -51,6 +51,8 @@ class WearMatchViewModel(application: Application) : AndroidViewModel(applicatio
     fun setDraftPlayerA(name: String) = _uiState.update { it.copy(draftPlayerA = name) }
     fun setDraftPlayerB(name: String) = _uiState.update { it.copy(draftPlayerB = name) }
     fun setDraftBestOf(bestOf: Int) = _uiState.update { it.copy(draftBestOf = bestOf) }
+    fun setDraftNoAd(noAd: Boolean) = _uiState.update { it.copy(draftNoAd = noAd) }
+    fun toggleDraftNoAd() = _uiState.update { it.copy(draftNoAd = !it.draftNoAd) }
 
     fun startMatch() {
         val s = _uiState.value
@@ -58,6 +60,7 @@ class WearMatchViewModel(application: Application) : AndroidViewModel(applicatio
             PlayerNames(s.draftPlayerA, s.draftPlayerB),
             MatchFormat.fromBestOf(s.draftBestOf),
             MatchMode.SINGLES,
+            noAd = s.draftNoAd,
         )
         publish(state)
     }
@@ -95,6 +98,7 @@ class WearMatchViewModel(application: Application) : AndroidViewModel(applicatio
                 draftPlayerA = "선수 A",
                 draftPlayerB = "선수 B",
                 draftBestOf = 3,
+                draftNoAd = false,
             )
         }
         viewModelScope.launch {
@@ -117,6 +121,7 @@ class WearMatchViewModel(application: Application) : AndroidViewModel(applicatio
                 draftPlayerA = state.playerA,
                 draftPlayerB = state.playerB,
                 draftBestOf = state.format.bestOf,
+                draftNoAd = state.noAd,
             )
         }
     }
@@ -139,17 +144,20 @@ class WearMatchViewModel(application: Application) : AndroidViewModel(applicatio
             SyncTypes.START -> {
                 val format = MatchFormat.fromBestOf(event.bestOf ?: 3)
                 val mode = MatchMode.fromName(event.mode)
+                val noAd = event.noAd ?: false
                 val state = engine.startMatch(
                     PlayerNames(event.playerA ?: "선수 A", event.playerB ?: "선수 B"),
                     format,
                     mode,
                     event.server?.let { runCatching { Side.valueOf(it) }.getOrNull() } ?: Side.A,
+                    noAd = noAd,
                 )
                 _uiState.update {
                     it.copy(
                         draftPlayerA = event.playerA ?: it.draftPlayerA,
                         draftPlayerB = event.playerB ?: it.draftPlayerB,
                         draftBestOf = event.bestOf ?: it.draftBestOf,
+                        draftNoAd = noAd,
                     )
                 }
                 publish(state)
@@ -198,6 +206,7 @@ data class WearUiState(
     val draftPlayerA: String = "선수 A",
     val draftPlayerB: String = "선수 B",
     val draftBestOf: Int = 3,
+    val draftNoAd: Boolean = false,
     val matchState: MatchState? = null,
     val canUndo: Boolean = false,
 )

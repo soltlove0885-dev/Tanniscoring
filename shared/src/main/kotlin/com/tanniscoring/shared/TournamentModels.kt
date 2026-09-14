@@ -64,6 +64,8 @@ data class Tournament(
     val id: String,
     val playerCount: Int,
     val defaultBestOf: Int,
+    /** No-Ad default for matches started from this tournament. */
+    val defaultNoAd: Boolean = false,
     val players: List<String>,
     val matches: List<BracketMatch>,
     val activeMatchId: String? = null,
@@ -85,6 +87,7 @@ object TournamentBracket {
     fun create(
         playerNames: List<String>,
         defaultBestOf: Int = 3,
+        defaultNoAd: Boolean = false,
         id: String = UUID.randomUUID().toString(),
         createdAtEpochMs: Long = System.currentTimeMillis(),
     ): Tournament {
@@ -98,6 +101,7 @@ object TournamentBracket {
             id = id,
             playerCount = cleaned.size,
             defaultBestOf = bestOf,
+            defaultNoAd = defaultNoAd,
             players = cleaned,
             matches = matches,
             createdAtEpochMs = createdAtEpochMs,

@@ -115,4 +115,15 @@ class TournamentBracketTest {
         assertEquals(MatchFormat.BEST_OF_3, MatchFormat.fromBestOf(3))
         assertEquals(MatchFormat.BEST_OF_5, MatchFormat.fromBestOf(5))
     }
+
+    @Test
+    fun `tournament defaultNoAd is persisted`() {
+        val t = TournamentBracket.create(listOf("A", "B", "C", "D"), defaultBestOf = 3, defaultNoAd = true)
+        assertTrue(t.defaultNoAd)
+        val json = SyncJson.encodeTournament(t)
+        val decoded = SyncJson.decodeTournament(json)
+        assertTrue(decoded.defaultNoAd)
+        assertEquals(t.defaultBestOf, decoded.defaultBestOf)
+    }
+
 }

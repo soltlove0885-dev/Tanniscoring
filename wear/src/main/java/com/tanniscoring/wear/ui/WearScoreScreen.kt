@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,6 +20,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +53,7 @@ fun WearScoreScreen(
     onToggleServer: () -> Unit = {},
     onNewMatch: () -> Unit = {},
     onEndMatch: () -> Unit = {},
+    onToggleNoAd: () -> Unit = {},
 ) {
     val view = LocalView.current
     fun hapticPoint() {
@@ -61,11 +67,13 @@ fun WearScoreScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(WearCourtColors.Black)
-            .padding(6.dp),
+            .padding(4.dp),
         contentAlignment = Alignment.Center,
     ) {
         if (!state.matchStarted || state.matchState == null) {
             StartMatchWear(
+                noAd = state.draftNoAd,
+                onToggleNoAd = onToggleNoAd,
                 onStart = {
                     hapticPoint()
                     onStart()
@@ -75,12 +83,26 @@ fun WearScoreScreen(
         }
 
         val match = state.matchState
+        var confirmEnd by remember { mutableStateOf(false) }
+
+        if (confirmEnd) {
+            EndMatchConfirm(
+                onConfirm = {
+                    hapticUndo()
+                    confirmEnd = false
+                    onEndMatch()
+                },
+                onCancel = { confirmEnd = false },
+            )
+            return
+        }
 
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
+            // Title / meta — long-press to end match (not adjacent to score taps)
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
@@ -90,34 +112,48 @@ fun WearScoreScreen(
                         onLongClick = {
                             if (!match.isMatchOver) {
                                 hapticUndo()
-                                onUndo()
+                                confirmEnd = true
                             }
                         },
-                    ),
+                    )
+                    .padding(top = 2.dp),
             ) {
+                Text(
+                    text = stringResource(R.string.app_name),
+                    style = MaterialTheme.typography.caption2,
+                    fontWeight = FontWeight.SemiBold,
+                    color = WearCourtColors.TextMuted,
+                )
                 Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    PlayerMini(
-                        name = match.playerA,
-                        sets = match.setsA,
-                        games = match.gamesA,
-                        points = match.pointDisplayA,
-                        isServing = match.server == Side.A && !match.isMatchOver,
+                    Text(
+                        text = "S ${match.setsA}-${match.setsB}",
+                        style = MaterialTheme.typography.caption1,
+                        fontWeight = FontWeight.Bold,
+                        color = WearCourtColors.TextPrimary,
                     )
-                    PlayerMini(
-                        name = match.playerB,
-                        sets = match.setsB,
-                        games = match.gamesB,
-                        points = match.pointDisplayB,
-                        isServing = match.server == Side.B && !match.isMatchOver,
+                    Text(
+                        text = "G ${match.gamesA}-${match.gamesB}",
+                        style = MaterialTheme.typography.caption1,
+                        fontWeight = FontWeight.Bold,
+                        color = WearCourtColors.TextSecondary,
                     )
+                    if (match.noAd) {
+                        Text(
+                            text = stringResource(R.string.no_ad_short),
+                            style = MaterialTheme.typography.caption3,
+                            fontWeight = FontWeight.Bold,
+                            color = WearCourtColors.Accent,
+                        )
+                    }
                 }
                 val status = when {
                     match.isMatchOver -> stringResource(R.string.match_over)
                     match.isTiebreak -> stringResource(R.string.tiebreak)
                     match.isDeuce -> stringResource(R.string.deuce)
+                    match.advantageA || match.advantageB -> stringResource(R.string.advantage_short)
                     else -> stringResource(
                         R.string.server_short,
                         if (match.server == Side.A) "A" else "B",
@@ -125,92 +161,219 @@ fun WearScoreScreen(
                 }
                 Text(
                     text = status,
-                    style = MaterialTheme.typography.caption1,
-                    fontWeight = if (match.isTiebreak || !match.isMatchOver) {
-                        FontWeight.Bold
-                    } else {
-                        FontWeight.Normal
-                    },
+                    style = MaterialTheme.typography.caption2,
+                    fontWeight = FontWeight.Bold,
                     color = when {
                         match.isTiebreak -> WearCourtColors.Serve
                         match.isMatchOver -> WearCourtColors.TextSecondary
+                        match.isDeuce -> WearCourtColors.Accent
                         else -> WearCourtColors.Serve
                     },
-                    modifier = Modifier.padding(top = 2.dp),
                 )
-                if (!match.isMatchOver) {
-                    Text(
-                        text = stringResource(R.string.long_press_undo),
-                        style = MaterialTheme.typography.caption3,
-                        color = WearCourtColors.TextMuted,
-                    )
-                }
             }
 
             if (match.isMatchOver) {
-                Button(
-                    onClick = onEndMatch,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
-                    colors = ButtonDefaults.primaryButtonColors(
-                        backgroundColor = WearCourtColors.AccentDim,
-                        contentColor = WearCourtColors.TextPrimary,
-                    ),
-                ) {
-                    Text(stringResource(R.string.end_match), fontWeight = FontWeight.Bold)
-                }
-            } else {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp),
                 ) {
-                    PointButtons(
-                        onPointA = {
+                    Text(
+                        text = stringResource(R.string.match_over),
+                        fontWeight = FontWeight.Bold,
+                        color = WearCourtColors.TextPrimary,
+                    )
+                    Button(
+                        onClick = onEndMatch,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp),
+                        colors = ButtonDefaults.primaryButtonColors(
+                            backgroundColor = WearCourtColors.AccentDim,
+                            contentColor = WearCourtColors.TextPrimary,
+                        ),
+                    ) {
+                        Text(stringResource(R.string.end_match), fontWeight = FontWeight.Bold)
+                    }
+                }
+            } else {
+                // Two large square score boxes — tap = point, long-press = undo
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = true)
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    ScoreSquare(
+                        label = match.playerA,
+                        points = match.pointDisplayA,
+                        isServing = match.server == Side.A,
+                        accent = WearCourtColors.Accent,
+                        onPoint = {
                             hapticPoint()
                             onPointA()
                         },
-                        onPointB = {
-                            hapticPoint()
-                            onPointB()
-                        },
-                        onLongPressUndo = {
+                        onUndo = {
                             hapticUndo()
                             onUndo()
                         },
+                        modifier = Modifier.weight(1f),
                     )
-                    Button(
-                        onClick = {
-                            hapticUndo()
-                            onEndMatch()
+                    ScoreSquare(
+                        label = match.playerB,
+                        points = match.pointDisplayB,
+                        isServing = match.server == Side.B,
+                        accent = WearCourtColors.SideB,
+                        onPoint = {
+                            hapticPoint()
+                            onPointB()
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 10.dp)
-                            .height(36.dp),
-                        colors = ButtonDefaults.secondaryButtonColors(
-                            backgroundColor = WearCourtColors.Surface,
-                            contentColor = WearCourtColors.TextSecondary,
-                        ),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.end_match),
-                            style = MaterialTheme.typography.caption2,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
+                        onUndo = {
+                            hapticUndo()
+                            onUndo()
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
                 }
+                Text(
+                    text = stringResource(R.string.long_press_hint),
+                    style = MaterialTheme.typography.caption3,
+                    color = WearCourtColors.TextMuted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 2.dp),
+                )
             }
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun StartMatchWear(onStart: () -> Unit) {
+private fun ScoreSquare(
+    label: String,
+    points: String,
+    isServing: Boolean,
+    accent: androidx.compose.ui.graphics.Color,
+    onPoint: () -> Unit,
+    onUndo: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(14.dp)
+    Box(
+        modifier = modifier
+            .aspectRatio(1f)
+            .clip(shape)
+            .background(
+                if (isServing) WearCourtColors.ServeContainer else WearCourtColors.SurfaceElevated,
+            )
+            .border(
+                width = if (isServing) 2.5.dp else 1.dp,
+                color = if (isServing) WearCourtColors.Serve else WearCourtColors.Border,
+                shape = shape,
+            )
+            .combinedClickable(
+                onClick = onPoint,
+                onLongClick = onUndo,
+            )
+            .padding(6.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (isServing) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(WearCourtColors.Serve),
+                    )
+                    Spacer(Modifier.width(4.dp))
+                }
+                Text(
+                    text = label.take(6),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.caption2,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isServing) WearCourtColors.Serve else WearCourtColors.TextSecondary,
+                )
+            }
+            Text(
+                text = points,
+                fontSize = 36.sp,
+                fontWeight = FontWeight.Bold,
+                color = WearCourtColors.TextPrimary,
+                maxLines = 1,
+            )
+            // Subtle side accent bar cue
+            Box(
+                modifier = Modifier
+                    .padding(top = 2.dp)
+                    .width(20.dp)
+                    .height(3.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(accent.copy(alpha = if (isServing) 1f else 0.45f)),
+            )
+        }
+    }
+}
+
+@Composable
+private fun EndMatchConfirm(
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit,
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(12.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.end_match_confirm),
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.body2,
+            fontWeight = FontWeight.Bold,
+            color = WearCourtColors.TextPrimary,
+        )
+        Button(
+            onClick = onConfirm,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(44.dp),
+            colors = ButtonDefaults.primaryButtonColors(
+                backgroundColor = WearCourtColors.Danger,
+                contentColor = WearCourtColors.TextPrimary,
+            ),
+        ) {
+            Text(stringResource(R.string.end_match), fontWeight = FontWeight.Bold)
+        }
+        Button(
+            onClick = onCancel,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(40.dp),
+            colors = ButtonDefaults.secondaryButtonColors(
+                backgroundColor = WearCourtColors.Surface,
+                contentColor = WearCourtColors.TextSecondary,
+            ),
+        ) {
+            Text(stringResource(R.string.cancel))
+        }
+    }
+}
+
+@Composable
+private fun StartMatchWear(
+    noAd: Boolean,
+    onToggleNoAd: () -> Unit,
+    onStart: () -> Unit,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
             text = stringResource(R.string.app_name),
@@ -225,10 +388,30 @@ private fun StartMatchWear(onStart: () -> Unit) {
             color = WearCourtColors.TextSecondary,
         )
         Button(
+            onClick = onToggleNoAd,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(40.dp),
+            colors = ButtonDefaults.secondaryButtonColors(
+                backgroundColor = if (noAd) WearCourtColors.AccentDim else WearCourtColors.Surface,
+                contentColor = if (noAd) WearCourtColors.TextPrimary else WearCourtColors.TextSecondary,
+            ),
+        ) {
+            Text(
+                text = if (noAd) {
+                    stringResource(R.string.no_ad_on)
+                } else {
+                    stringResource(R.string.no_ad_off)
+                },
+                style = MaterialTheme.typography.caption1,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+        Button(
             onClick = onStart,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp),
+                .height(48.dp),
             colors = ButtonDefaults.primaryButtonColors(
                 backgroundColor = WearCourtColors.Accent,
                 contentColor = WearCourtColors.Black,
@@ -236,117 +419,8 @@ private fun StartMatchWear(onStart: () -> Unit) {
         ) {
             Text(
                 text = stringResource(R.string.start_match),
-                fontSize = 18.sp,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-            )
-        }
-    }
-}
-
-@Composable
-private fun PlayerMini(
-    name: String,
-    sets: Int,
-    games: Int,
-    points: String,
-    isServing: Boolean,
-) {
-    val shape = RoundedCornerShape(10.dp)
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .clip(shape)
-            .background(
-                if (isServing) WearCourtColors.ServeContainer else WearCourtColors.Surface,
-            )
-            .then(
-                if (isServing) {
-                    Modifier.border(1.5.dp, WearCourtColors.Serve, shape)
-                } else {
-                    Modifier
-                },
-            )
-            .padding(horizontal = 6.dp, vertical = 4.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (isServing) {
-                Box(
-                    modifier = Modifier
-                        .size(7.dp)
-                        .clip(CircleShape)
-                        .background(WearCourtColors.Serve),
-                )
-                Spacer(Modifier.width(3.dp))
-            }
-            Text(
-                text = name,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.caption1,
-                fontWeight = FontWeight.Bold,
-                color = if (isServing) WearCourtColors.Serve else WearCourtColors.TextPrimary,
-            )
-        }
-        Text(
-            text = points,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = WearCourtColors.TextPrimary,
-        )
-        Text(
-            text = "S$sets G$games",
-            style = MaterialTheme.typography.caption3,
-            color = WearCourtColors.TextSecondary,
-        )
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun PointButtons(
-    onPointA: () -> Unit,
-    onPointB: () -> Unit,
-    onLongPressUndo: () -> Unit,
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(bottom = 4.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(72.dp)
-                .clip(CircleShape)
-                .background(WearCourtColors.Accent)
-                .combinedClickable(
-                    onClick = onPointA,
-                    onLongClick = onLongPressUndo,
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                stringResource(R.string.point_a),
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = WearCourtColors.Black,
-            )
-        }
-        Box(
-            modifier = Modifier
-                .size(72.dp)
-                .clip(CircleShape)
-                .background(WearCourtColors.SideB)
-                .combinedClickable(
-                    onClick = onPointB,
-                    onLongClick = onLongPressUndo,
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                stringResource(R.string.point_b),
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = WearCourtColors.TextPrimary,
             )
         }
     }

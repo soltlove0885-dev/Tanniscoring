@@ -1,4 +1,4 @@
-# Tanniscoring (테니스코어링) 1.3.1
+# Tanniscoring (테니스코어링) 1.4.0
 
 Android 폰 + Wear OS 테니스 스코어 앱.
 
@@ -6,7 +6,7 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 
 | | |
 |---|---|
-| Version | **1.3.1** (versionCode phone **21** / wear **22**) |
+| Version | **1.4.0** (versionCode phone **23** / wear **24**) |
 | applicationId (phone **and** wear) | `com.tanniscoring.app` |
 | minSdk | Phone 26 / Wear 30 |
 | UI | Jetpack Compose + Wear Compose (한국어) |
@@ -15,10 +15,12 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 
 ## Product (simple)
 
-- **Wear OS watch is primary**: start match on watch → **tap A/B = point**, **long-press = undo**
+- **Wear OS watch is primary**: start match on watch → **tap score box = point**, **long-press box = undo**
 - **Phone is live scoreboard** (optional A/B/undo that send events to Wear)
+- **No-Ad (노애드, 1.4.0+)**: at deuce, next point wins the game; toggle on Wear start / tournament default
 - **Tournament mode (1.2.0+)**: phone creates 4/8-player single-elimination bracket; tap a match to start on Wear; winner advances automatically
-- **1.3.1**: removed broken camera serve-speed (스피드 온 / CameraX / PATH_SERVE); tournament setup/end/leave clears player-name drafts + bracket; Wear **경기 종료** exits to idle, clears keep-screen-on, notifies phone (`matchActive=false`)
+- **1.4.0**: Wear two large square score boxes; End match via long-press title + confirm (not beside score); OLED polish; no-ad engine + tests
+- **1.3.1**: removed broken camera serve-speed; tournament name reset; Wear end → idle + `matchActive=false`
 - **1.1.0+ UI**: OLED dark court palette; phone **landscape = huge scoreboard-only**; clear **server highlight**; **keep screen on** during active match (phone + wear)
 - Real-time sync via **MessageClient** + **WearableListenerService**
 - Same `applicationId` on phone + wear; phone embeds wear with `wearApp(project(":wear"))` (secondary — Galaxy Watch auto-install often fails)
@@ -41,7 +43,7 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 
 1. **Uninstall old phone app** `com.tanniscoring.app` (any previous version).
 2. **Uninstall old Wear package** `com.tanniscoring.wear` from the Galaxy Watch / Wear OS device if present.
-3. Install **1.3.1** phone APK/AAB (`tanniscoring-app-1.3.1.*`). Wear may auto-install via embed; if not, use phone **워치에 설치** or watch Play.
+3. Install **1.4.0** phone APK/AAB (`tanniscoring-app-vc23-1.4.0.*`). Wear may auto-install via embed; if not, use phone **워치에 설치** or watch Play.
 4. On the phone idle screen tap **워치 앱 열기**, or open **테니스코어링** from the **watch launcher**.
 5. Single match: watch **경기 시작** → phone scoreboard. Tournament: phone **토너먼트** → select match → watch scores.
 
@@ -56,6 +58,9 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 - [ ] Wear **경기 종료** → idle + phone scoreboard clears (`matchActive=false`)
 - [ ] Tournament leave/end/new setup → no leftover player names
 - [ ] No 스피드 온 / camera serve-speed UI
+- [ ] Wear: no-ad toggle → deuce → next point wins game
+- [ ] Wear: two square score boxes; long-press title → end confirm
+- [ ] Tournament setup: 노애드 default toggle
 
 ---
 
@@ -106,7 +111,8 @@ No backend. Google Play Services Wearable Data Layer only.
 
 ## Scoring rules (MVP)
 
-- Points: 0 → 15 → 30 → 40 · Deuce / Advantage / Game
+- Points: 0 → 15 → 30 → 40 · Deuce / Advantage / Game (standard)
+- **No-Ad**: at deuce, next point wins the game (no advantage)
 - Set: first to 6, win by 2; 6-6 → tiebreak to 7 (win by 2)
 - Match: best-of-1, best-of-3 (default), or best-of-5
 - Server rotates after each game; TB first-point then every 2; after TB receiver serves next

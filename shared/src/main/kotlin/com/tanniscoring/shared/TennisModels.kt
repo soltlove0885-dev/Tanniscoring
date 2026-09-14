@@ -70,6 +70,8 @@ data class MatchState(
     val playerB: String,
     val format: MatchFormat,
     val mode: MatchMode = MatchMode.SINGLES,
+    /** No-Ad (노애드): at deuce, next point wins the game. */
+    val noAd: Boolean = false,
     val setsA: Int,
     val setsB: Int,
     val gamesA: Int,
@@ -143,6 +145,7 @@ data class MatchStateDto(
     val playerB: String = "",
     val bestOf: Int = 3,
     val mode: String = MatchMode.SINGLES.name,
+    val noAd: Boolean = false,
     val setsA: Int = 0,
     val setsB: Int = 0,
     val gamesA: Int = 0,
@@ -178,6 +181,7 @@ data class ScoringEventDto(
     val bestOf: Int? = null,
     val mode: String? = null,
     val server: String? = null,
+    val noAd: Boolean? = null,
     val sequence: Long = 0L,
 )
 
@@ -202,6 +206,7 @@ fun MatchState.toDto(): MatchStateDto = MatchStateDto(
     playerB = playerB,
     bestOf = format.bestOf,
     mode = mode.name,
+    noAd = noAd,
     setsA = setsA,
     setsB = setsB,
     gamesA = gamesA,
@@ -226,6 +231,7 @@ fun MatchStateDto.toMatchState(): MatchState = MatchState(
     playerB = playerB,
     format = MatchFormat.fromBestOf(bestOf),
     mode = MatchMode.fromName(mode),
+    noAd = noAd,
     setsA = setsA,
     setsB = setsB,
     gamesA = gamesA,

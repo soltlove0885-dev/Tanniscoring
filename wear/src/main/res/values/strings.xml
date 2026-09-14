@@ -8,11 +8,18 @@
     <string name="start_match">경기 시작</string>
     <string name="start_defaults">선수 A / 선수 B · 3판 2선승</string>
     <string name="long_press_undo">길게 눌러 되돌리기</string>
+    <string name="long_press_hint">점수 길게 = 되돌리기 · 제목 길게 = 종료</string>
     <string name="new_match">새 경기</string>
     <string name="end_match">경기 종료</string>
+    <string name="end_match_confirm">경기를 종료할까요?</string>
+    <string name="cancel">취소</string>
     <string name="deuce">듀스</string>
+    <string name="advantage_short">AD</string>
     <string name="tiebreak">TB</string>
     <string name="tiebreak_full">타이브레이크</string>
     <string name="match_over">종료</string>
     <string name="server_short">서브 %1$s</string>
+    <string name="no_ad_short">노애드</string>
+    <string name="no_ad_on">노애드 ON</string>
+    <string name="no_ad_off">노애드 OFF</string>
 </resources>
