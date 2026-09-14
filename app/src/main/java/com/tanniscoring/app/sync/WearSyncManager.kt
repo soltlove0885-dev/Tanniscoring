@@ -1,7 +1,6 @@
 package com.tanniscoring.app.sync
 
 import android.content.ActivityNotFoundException
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -139,14 +138,18 @@ class WearSyncManager private constructor(context: Context) : MessageClient.OnMe
 
 
     /**
-     * Launch Wear [MainActivity] on connected nodes (same applicationId).
-     * Uses RemoteActivityHelper; no-ops gracefully if no nodes / app missing.
+     * Launch Wear MainActivity on connected nodes (same applicationId).
+     *
+     * RemoteActivityHelper only supports ACTION_VIEW + CATEGORY_BROWSABLE + data URI
+     * (not ACTION_MAIN / explicit ComponentName). Wear declares
+     * `tanniscoring://open` intent-filter for this.
      */
     suspend fun openWearApp(activityContext: Context) {
-        val launchIntent = Intent(Intent.ACTION_MAIN)
-            .addCategory(Intent.CATEGORY_LAUNCHER)
-            .setComponent(ComponentName(APP_PACKAGE, WEAR_MAIN_ACTIVITY))
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        // Required shape for RemoteActivityHelper.startRemoteActivity
+        val launchIntent = Intent(Intent.ACTION_VIEW)
+            .addCategory(Intent.CATEGORY_BROWSABLE)
+            .setData(Uri.parse(WEAR_OPEN_URI))
+            .setPackage(APP_PACKAGE)
 
         val nodes = connectedNodeIds()
         if (nodes.isEmpty()) {
@@ -163,14 +166,21 @@ class WearSyncManager private constructor(context: Context) : MessageClient.OnMe
         }
         val opened = startRemoteOnNodes(launchIntent, nodes)
         if (!opened) {
-            withContext(Dispatchers.Main) {
-                Toast.makeText(
-                    activityContext,
-                    activityContext.getString(
-                        R.string.wear_open_failed_hint,
-                    ),
-                    Toast.LENGTH_LONG,
-                ).show()
+            // Retry without setPackage (some Wear stacks reject package-restricted remotes)
+            val fallback = Intent(Intent.ACTION_VIEW)
+                .addCategory(Intent.CATEGORY_BROWSABLE)
+                .setData(Uri.parse(WEAR_OPEN_URI))
+            val openedFallback = startRemoteOnNodes(fallback, nodes)
+            if (!openedFallback) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        activityContext,
+                        activityContext.getString(
+                            R.string.wear_open_failed_hint,
+                        ),
+                        Toast.LENGTH_LONG,
+                    ).show()
+                }
             }
         }
     }
@@ -280,7 +290,8 @@ class WearSyncManager private constructor(context: Context) : MessageClient.OnMe
         private const val TAG = "WearSyncManager"
         /** Same applicationId on phone + wear. */
         const val APP_PACKAGE = "com.tanniscoring.app"
-        private const val WEAR_MAIN_ACTIVITY = "com.tanniscoring.wear.MainActivity"
+        /** Deep link handled by Wear MainActivity (RemoteActivityHelper-compatible). */
+        private const val WEAR_OPEN_URI = "tanniscoring://open"
         private const val MARKET_URI = "market://details?id=$APP_PACKAGE"
 
         private val _incomingState = MutableSharedFlow<MatchStateDto>(

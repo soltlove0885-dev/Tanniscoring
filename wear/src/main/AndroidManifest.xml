@@ -28,6 +28,15 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Phone 「워치 앱 열기」 via RemoteActivityHelper (ACTION_VIEW + BROWSABLE only) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="tanniscoring"
+                    android:host="open" />
+            </intent-filter>
         </activity>
 
         <service

@@ -52,6 +52,9 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
     private var lastAdvancedTournamentMatchId: String? = null
     private var wasWearConnected = false
     private var lastScoreFingerprint: String? = null
+    /** Debounce phone mirror taps so one press ≠ two MessageClient events. */
+    private var lastMirrorEventAtMs: Long = 0L
+    private var lastMirrorEventKey: String? = null
 
     init {
         val existingTournament = tournamentRepo.load()
@@ -366,6 +369,19 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun sendEvent(event: ScoringEventDto) {
+        // Debounce POINT/UNDO/TOGGLE rapid repeats (double-tap / multi-fire).
+        if (event.type == SyncTypes.POINT ||
+            event.type == SyncTypes.UNDO ||
+            event.type == SyncTypes.TOGGLE_SERVER
+        ) {
+            val key = "${event.type}:${event.side.orEmpty()}"
+            val now = System.currentTimeMillis()
+            if (key == lastMirrorEventKey && now - lastMirrorEventAtMs < 400L) {
+                return
+            }
+            lastMirrorEventKey = key
+            lastMirrorEventAtMs = now
+        }
         viewModelScope.launch { sync.sendEvent(event) }
     }
 

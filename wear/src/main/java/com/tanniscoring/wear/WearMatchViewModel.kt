@@ -32,6 +32,12 @@ class WearMatchViewModel(application: Application) : AndroidViewModel(applicatio
     private val sync = PhoneSyncManager.get(application.applicationContext)
     private val repo = WearMatchRepository(application.applicationContext)
 
+    /** Last applied phone event sequence (ignore duplicates / redeliveries). */
+    private var lastAppliedRemoteSequence: Long = -1L
+    /** Debounce rapid identical POINT taps (local or remote). */
+    private var lastPointAtMs: Long = 0L
+    private var lastPointSide: Side? = null
+
     private val _uiState = MutableStateFlow(WearUiState())
     val uiState: StateFlow<WearUiState> = _uiState.asStateFlow()
 
@@ -126,16 +132,33 @@ class WearMatchViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    private fun applyPoint(side: Side) {
+    private fun applyPoint(side: Side, fromRemote: Boolean = false) {
+        val now = System.currentTimeMillis()
+        // Local taps: short debounce. Remote already sequence-deduped; still guard
+        // identical back-to-back POINT within 250ms (belt and suspenders).
+        val window = if (fromRemote) 250L else 350L
+        if (side == lastPointSide && now - lastPointAtMs < window) {
+            return
+        }
+        lastPointSide = side
+        lastPointAtMs = now
         val state = engine.pointWon(side)
         publish(state)
     }
 
     private fun handleRemoteEvent(event: ScoringEventDto) {
+        // Sequence > 0: skip if we already applied this (or a later) phone event.
+        // Protects against listener + WearableListenerService double delivery.
+        if (event.sequence > 0L) {
+            if (event.sequence <= lastAppliedRemoteSequence) {
+                return
+            }
+            lastAppliedRemoteSequence = event.sequence
+        }
         when (event.type) {
             SyncTypes.POINT -> {
                 val side = event.side?.let { runCatching { Side.valueOf(it) }.getOrNull() } ?: return
-                applyPoint(side)
+                applyPoint(side, fromRemote = true)
             }
             SyncTypes.UNDO -> undo()
             SyncTypes.TOGGLE_SERVER -> toggleServer()

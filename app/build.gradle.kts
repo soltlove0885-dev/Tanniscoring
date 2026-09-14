@@ -23,8 +23,8 @@ android {
         applicationId = "com.tanniscoring.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 23
-        versionName = "1.4.0"
+        versionCode = 25
+        versionName = "1.4.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

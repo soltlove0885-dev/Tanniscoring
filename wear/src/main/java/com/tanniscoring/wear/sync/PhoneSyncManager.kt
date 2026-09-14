@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Wear-side MessageClient bridge.
@@ -29,6 +30,10 @@ import kotlinx.coroutines.tasks.await
  * Wear → Phone: full [MatchStateDto] on [SyncPaths.PATH_STATE]
  * Phone → Wear: scoring events on [SyncPaths.PATH_EVENT]
  * Phone → Wear: REQUEST_STATE on [SyncPaths.PATH_REQUEST_STATE]
+ *
+ * When the Wear UI is foregrounded, both [MessageClient.addListener] and
+ * [TanniscoringPhoneListenerService] receive the same message — we dedupe by
+ * MessageEvent.requestId so POINT/UNDO are applied once.
  */
 class PhoneSyncManager private constructor(context: Context) :
     MessageClient.OnMessageReceivedListener {
@@ -51,7 +56,7 @@ class PhoneSyncManager private constructor(context: Context) :
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
-        handleMessage(messageEvent.path, messageEvent.data)
+        handleServiceMessage(messageEvent)
     }
 
     /**
@@ -90,12 +95,17 @@ class PhoneSyncManager private constructor(context: Context) :
 
     companion object {
         private const val TAG = "PhoneSyncManager"
+        /** Drop duplicate deliveries older than this window. */
+        private const val DEDUPE_TTL_MS = 5_000L
 
         private val _incomingEvents = MutableSharedFlow<ScoringEventDto>(extraBufferCapacity = 16)
         val incomingEvents: SharedFlow<ScoringEventDto> = _incomingEvents.asSharedFlow()
 
         private val _stateRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 8)
         val stateRequests: SharedFlow<Unit> = _stateRequests.asSharedFlow()
+
+        /** requestId → wall time when first seen */
+        private val seenRequestIds = ConcurrentHashMap<Int, Long>()
 
         @Volatile
         private var instance: PhoneSyncManager? = null
@@ -107,7 +117,32 @@ class PhoneSyncManager private constructor(context: Context) :
         }
 
         fun handleServiceMessage(messageEvent: MessageEvent) {
+            if (!markFirstDelivery(messageEvent.requestId)) {
+                Log.d(
+                    TAG,
+                    "Ignoring duplicate message requestId=${messageEvent.requestId} path=${messageEvent.path}",
+                )
+                return
+            }
             handleMessage(messageEvent.path, messageEvent.data)
+        }
+
+        /**
+         * @return true if this is the first delivery of [requestId] within the TTL window.
+         */
+        private fun markFirstDelivery(requestId: Int): Boolean {
+            val now = System.currentTimeMillis()
+            // Opportunistic prune
+            if (seenRequestIds.size > 64) {
+                val cutoff = now - DEDUPE_TTL_MS
+                seenRequestIds.entries.removeIf { it.value < cutoff }
+            }
+            val prev = seenRequestIds.putIfAbsent(requestId, now)
+            if (prev == null) return true
+            // Same id seen recently → duplicate (listener + WearableListenerService)
+            if (now - prev < DEDUPE_TTL_MS) return false
+            seenRequestIds[requestId] = now
+            return true
         }
 
         fun handleMessage(path: String, data: ByteArray) {
