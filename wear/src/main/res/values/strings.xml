@@ -9,6 +9,7 @@
     <string name="start_defaults">선수 A / 선수 B · 3판 2선승</string>
     <string name="long_press_undo">길게 눌러 되돌리기</string>
     <string name="new_match">새 경기</string>
+    <string name="end_match">경기 종료</string>
     <string name="deuce">듀스</string>
     <string name="tiebreak">TB</string>
     <string name="tiebreak_full">타이브레이크</string>

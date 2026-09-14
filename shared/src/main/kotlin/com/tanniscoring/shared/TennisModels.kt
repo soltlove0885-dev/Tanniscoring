@@ -123,8 +123,6 @@ object SyncPaths {
     const val PATH_STATE = "/tanniscoring/state"
     /** Ask peer to re-broadcast current state. */
     const val PATH_REQUEST_STATE = "/tanniscoring/request_state"
-    /** Phone → Wear: camera serve speed / label flash (optional small Wear text). */
-    const val PATH_SERVE = "/tanniscoring/serve"
 }
 
 object SyncTypes {
@@ -135,7 +133,6 @@ object SyncTypes {
     const val TOGGLE_SERVER = "TOGGLE_SERVER"
     const val END = "END"
     const val REQUEST_STATE = "REQUEST_STATE"
-    const val SERVE = "SERVE"
 }
 
 /**

@@ -7,13 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.tanniscoring.app.data.MatchRepository
 import com.tanniscoring.app.data.TournamentRepository
 import com.tanniscoring.app.sync.WearSyncManager
-import com.tanniscoring.shared.ServeSync
-import com.tanniscoring.shared.ServeSessionState
-import com.tanniscoring.shared.ServeSessionEngine
-import com.tanniscoring.shared.ServePhase
-import com.tanniscoring.shared.ServeCalibration
-import com.tanniscoring.app.serve.ServeTimeoutWatcher
-import com.tanniscoring.app.serve.MotionServeAnalyzer
 import com.tanniscoring.shared.BracketMatch
 import com.tanniscoring.shared.BracketMatchStatus
 import com.tanniscoring.shared.MatchHistoryEntry
@@ -60,17 +53,6 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
     private var wasWearConnected = false
     private var lastScoreFingerprint: String? = null
 
-    private val serveEngine = ServeSessionEngine()
-    private val serveTimeout = ServeTimeoutWatcher(
-        scope = viewModelScope,
-        engine = serveEngine,
-        onChanged = { publishServe() },
-    )
-    val motionAnalyzer = MotionServeAnalyzer(
-        onServePeak = { pxPerSec -> viewModelScope.launch { onServeMotionPeak(pxPerSec) } },
-        onReturnLike = { viewModelScope.launch { onReturnLikeMotion() } },
-    )
-
     init {
         val existingTournament = tournamentRepo.load()
         if (existingTournament != null && !existingTournament.isComplete) {
@@ -104,67 +86,6 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
     }
 
 
-    fun toggleServeSpeed() {
-        _uiState.update { it.copy(serveSpeedOn = !it.serveSpeedOn) }
-        val on = _uiState.value.serveSpeedOn
-        motionAnalyzer.setEnabled(on)
-        if (!on) {
-            serveTimeout.cancel()
-            motionAnalyzer.clearReturnWindow()
-        }
-        pushServeToWear()
-    }
-
-    fun cycleServeCalibration() {
-        val current = serveEngine.snapshot().calibrationPreset
-        val next = when (current) {
-            ServeCalibration.PRESET_NET_STANDARD -> ServeCalibration.PRESET_BASELINE
-            ServeCalibration.PRESET_BASELINE -> ServeCalibration.PRESET_NET_STANDARD
-            else -> ServeCalibration.PRESET_NET_STANDARD
-        }
-        serveEngine.setCalibration(next)
-        publishServe()
-    }
-
-    fun clearServeFlash() {
-        serveEngine.clearFlash()
-        publishServe()
-    }
-
-    private fun onServeMotionPeak(pixelsPerSecond: Float) {
-        if (!_uiState.value.serveSpeedOn) return
-        val match = _uiState.value.matchState ?: return
-        if (match.isMatchOver) return
-        val s = serveEngine.onServeMotion(pixelsPerSecond)
-        serveTimeout.armForPhase(s.phase)
-        publishServe()
-    }
-
-    private fun onReturnLikeMotion() {
-        if (!_uiState.value.serveSpeedOn) return
-        // Return-like motion with no score change → fault → 2nd serve
-        val s = serveEngine.onReturnWithoutScoreChange()
-        serveTimeout.cancel()
-        if (s.phase == ServePhase.WAITING_SECOND) {
-            // ready for 2nd; no timeout until next serve peak
-        }
-        publishServe()
-    }
-
-    private fun publishServe() {
-        val snap = serveEngine.snapshot()
-        _uiState.update { it.copy(serveSession = snap) }
-        pushServeToWear()
-    }
-
-    private fun pushServeToWear() {
-        val active = _uiState.value.serveSpeedOn &&
-            _uiState.value.matchState != null &&
-            _uiState.value.matchState?.isMatchOver != true
-        val dto = ServeSync.toDto(serveEngine.snapshot(), active = active)
-        viewModelScope.launch { sync.sendServe(dto) }
-    }
-
     private fun scoreFingerprint(state: MatchState): String =
         "${state.setsA}-${state.setsB}|${state.gamesA}-${state.gamesB}|${state.pointsA}-${state.pointsB}|${state.isTiebreak}|${state.advantageA}|${state.advantageB}|${state.server}"
 
@@ -181,9 +102,6 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
         }
         repo.saveCurrentMatch(null)
         val tournament = _uiState.value.tournament
-        serveTimeout.cancel()
-        serveEngine.onMatchInactive()
-        motionAnalyzer.clearReturnWindow()
         lastScoreFingerprint = null
         _uiState.update {
             it.copy(
@@ -193,10 +111,8 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
                 scoringFromWear = false,
                 history = repo.loadHistory(),
                 screen = if (tournament != null) PhoneScreen.TOURNAMENT_BRACKET else PhoneScreen.IDLE,
-                serveSession = serveEngine.snapshot(),
             )
         }
-        pushServeToWear()
     }
 
     fun requestWearState() {
@@ -214,8 +130,12 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
     // --- Tournament ---
 
     fun openTournamentSetup() {
+        // New tournament flow: wipe prior bracket + drafts so names never stick.
+        tournamentRepo.save(null)
+        lastAdvancedTournamentMatchId = null
         _uiState.update {
             it.copy(
+                tournament = null,
                 screen = PhoneScreen.TOURNAMENT_SETUP,
                 draftPlayerCount = 4,
                 draftBestOf = 3,
@@ -241,10 +161,12 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun cancelTournamentSetup() {
-        val tournament = _uiState.value.tournament
         _uiState.update {
             it.copy(
-                screen = if (tournament != null) PhoneScreen.TOURNAMENT_BRACKET else PhoneScreen.IDLE,
+                screen = PhoneScreen.IDLE,
+                draftPlayerCount = 4,
+                draftBestOf = 3,
+                draftPlayerNames = List(8) { "" },
             )
         }
     }
@@ -260,6 +182,10 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
             it.copy(
                 tournament = tournament,
                 screen = PhoneScreen.TOURNAMENT_BRACKET,
+                // Clear drafts immediately so a later setup never shows old names.
+                draftPlayerCount = 4,
+                draftBestOf = 3,
+                draftPlayerNames = List(8) { "" },
             )
         }
     }
@@ -269,7 +195,18 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun showIdle() {
-        _uiState.update { it.copy(screen = PhoneScreen.IDLE) }
+        // Leaving tournament/idle: wipe bracket + name drafts completely.
+        tournamentRepo.save(null)
+        lastAdvancedTournamentMatchId = null
+        _uiState.update {
+            it.copy(
+                screen = PhoneScreen.IDLE,
+                tournament = null,
+                draftPlayerCount = 4,
+                draftBestOf = 3,
+                draftPlayerNames = List(8) { "" },
+            )
+        }
     }
 
     fun openActiveScoreboard() {
@@ -308,6 +245,9 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.update {
             it.copy(
                 tournament = null,
+                draftPlayerCount = 4,
+                draftBestOf = 3,
+                draftPlayerNames = List(8) { "" },
                 screen = if (it.matchStarted && it.matchState != null) {
                     PhoneScreen.MATCH_SCOREBOARD
                 } else {
@@ -357,30 +297,11 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
                 )
             }
             repo.saveCurrentMatch(null)
-            serveTimeout.cancel()
-            serveEngine.onMatchInactive()
-            motionAnalyzer.clearReturnWindow()
             lastScoreFingerprint = null
-            _uiState.update { it.copy(serveSession = serveEngine.snapshot()) }
-            pushServeToWear()
             return
         }
         val state = dto.toMatchState()
-        val fp = scoreFingerprint(state)
-        val scoreChanged = lastScoreFingerprint != null && lastScoreFingerprint != fp
-        val matchJustStarted = lastScoreFingerprint == null
-        if (state.isMatchOver) {
-            serveTimeout.cancel()
-            serveEngine.onMatchInactive()
-            motionAnalyzer.clearReturnWindow()
-        } else if (scoreChanged) {
-            serveTimeout.cancel()
-            serveEngine.onPointScored()
-            motionAnalyzer.clearReturnWindow()
-        } else if (matchJustStarted) {
-            serveEngine.onMatchActive()
-        }
-        lastScoreFingerprint = fp
+        lastScoreFingerprint = scoreFingerprint(state)
         _uiState.update {
             val stayOnBracket = it.screen == PhoneScreen.TOURNAMENT_BRACKET ||
                 it.screen == PhoneScreen.TOURNAMENT_SETUP
@@ -390,11 +311,9 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
                 canUndo = !state.isMatchOver,
                 scoringFromWear = true,
                 screen = if (stayOnBracket) it.screen else PhoneScreen.MATCH_SCOREBOARD,
-                serveSession = serveEngine.snapshot(),
             )
         }
         repo.saveCurrentMatch(state)
-        pushServeToWear()
         if (state.isMatchOver) {
             persistFinished(state)
             maybeAdvanceTournament(state)
@@ -483,7 +402,4 @@ data class MatchUiState(
     val draftPlayerCount: Int = 4,
     val draftBestOf: Int = 3,
     val draftPlayerNames: List<String> = List(8) { "" },
-    /** Camera-assisted serve speed (phone-side session). */
-    val serveSpeedOn: Boolean = false,
-    val serveSession: ServeSessionState = ServeSessionState(),
 )

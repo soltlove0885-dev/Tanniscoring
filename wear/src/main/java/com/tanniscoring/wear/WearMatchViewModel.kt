@@ -9,7 +9,6 @@ import com.tanniscoring.shared.MatchState
 import com.tanniscoring.shared.MatchStateDto
 import com.tanniscoring.shared.PlayerNames
 import com.tanniscoring.shared.ScoringEventDto
-import com.tanniscoring.shared.ServeInfoDto
 import com.tanniscoring.shared.Side
 import com.tanniscoring.shared.SyncTypes
 import com.tanniscoring.shared.TennisScoringEngine
@@ -43,18 +42,6 @@ class WearMatchViewModel(application: Application) : AndroidViewModel(applicatio
         }
         viewModelScope.launch {
             sync.stateRequests.collect { pushCurrentStateToPhone() }
-        }
-        viewModelScope.launch {
-            sync.incomingServe.collect { dto ->
-                _uiState.update {
-                    it.copy(
-                        serveSpeedKmH = dto.speedKmH,
-                        serveLabel = if (dto.active) dto.label else null,
-                        serveFlash = dto.flash && dto.active,
-                        serveFlashToken = dto.flashToken,
-                    )
-                }
-            }
         }
         sync.startListening()
         // On open: resend current state so phone scoreboard catches up.
@@ -93,7 +80,11 @@ class WearMatchViewModel(application: Application) : AndroidViewModel(applicatio
         publish(state)
     }
 
-    fun resetToStart() {
+    /**
+     * Exit scoring UI to idle: clear engine + drafts, drop keep-screen-on via UI,
+     * and notify phone with matchActive=false.
+     */
+    fun exitToIdle() {
         engine.clearMatch()
         repo.saveCurrentMatch(null)
         _uiState.update {
@@ -101,6 +92,9 @@ class WearMatchViewModel(application: Application) : AndroidViewModel(applicatio
                 matchStarted = false,
                 matchState = null,
                 canUndo = false,
+                draftPlayerA = "선수 A",
+                draftPlayerB = "선수 B",
+                draftBestOf = 3,
             )
         }
         viewModelScope.launch {
@@ -109,6 +103,8 @@ class WearMatchViewModel(application: Application) : AndroidViewModel(applicatio
             )
         }
     }
+
+    fun resetToStart() = exitToIdle()
 
     private fun restoreIfNeeded() {
         val saved = repo.loadCurrentMatch() ?: return
@@ -138,7 +134,8 @@ class WearMatchViewModel(application: Application) : AndroidViewModel(applicatio
             }
             SyncTypes.UNDO -> undo()
             SyncTypes.TOGGLE_SERVER -> toggleServer()
-            SyncTypes.END -> endMatch()
+            // Phone "경기 종료": fully exit Wear scoring so watch is not stuck running.
+            SyncTypes.END -> exitToIdle()
             SyncTypes.START -> {
                 val format = MatchFormat.fromBestOf(event.bestOf ?: 3)
                 val mode = MatchMode.fromName(event.mode)
@@ -203,21 +200,4 @@ data class WearUiState(
     val draftBestOf: Int = 3,
     val matchState: MatchState? = null,
     val canUndo: Boolean = false,
-    /** Optional phone camera serve estimate (추정 km/h). */
-    val serveSpeedKmH: Float? = null,
-    val serveLabel: String? = null,
-    val serveFlash: Boolean = false,
-    val serveFlashToken: Long = 0L,
-) {
-    val serveWearText: String?
-        get() {
-            val label = serveLabel ?: return null
-            val sp = serveSpeedKmH?.toInt()?.toString()
-            return when {
-                label.equals("fault", true) && sp != null -> "폴트 · 추정 $sp"
-                label.equals("fault", true) -> "폴트"
-                sp != null -> "$label · 추정 $sp"
-                else -> label
-            }
-        }
-}
+)

@@ -40,6 +40,7 @@ class MainActivity : ComponentActivity() {
                     onStart = { viewModel.startMatch() },
                     onToggleServer = { viewModel.toggleServer() },
                     onNewMatch = { viewModel.resetToStart() },
+                    onEndMatch = { viewModel.exitToIdle() },
                 )
             }
         }

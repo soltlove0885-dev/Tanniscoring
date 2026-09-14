@@ -1,4 +1,4 @@
-# Tanniscoring (테니스코어링) 1.3.0
+# Tanniscoring (테니스코어링) 1.3.1
 
 Android 폰 + Wear OS 테니스 스코어 앱.
 
@@ -6,7 +6,7 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 
 | | |
 |---|---|
-| Version | **1.3.0** (versionCode phone **19** / wear **20**) |
+| Version | **1.3.1** (versionCode phone **21** / wear **22**) |
 | applicationId (phone **and** wear) | `com.tanniscoring.app` |
 | minSdk | Phone 26 / Wear 30 |
 | UI | Jetpack Compose + Wear Compose (한국어) |
@@ -18,31 +18,11 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 - **Wear OS watch is primary**: start match on watch → **tap A/B = point**, **long-press = undo**
 - **Phone is live scoreboard** (optional A/B/undo that send events to Wear)
 - **Tournament mode (1.2.0+)**: phone creates 4/8-player single-elimination bracket; tap a match to start on Wear; winner advances automatically
-- **Serve speed MVP (1.3.0)**: phone **스피드 온** → CameraX motion-peak estimate (추정 km/h), 1st/2nd/fault session, gold flash on landscape OLED scoreboard; optional small text on Wear
+- **1.3.1**: removed broken camera serve-speed (스피드 온 / CameraX / PATH_SERVE); tournament setup/end/leave clears player-name drafts + bracket; Wear **경기 종료** exits to idle, clears keep-screen-on, notifies phone (`matchActive=false`)
 - **1.1.0+ UI**: OLED dark court palette; phone **landscape = huge scoreboard-only**; clear **server highlight**; **keep screen on** during active match (phone + wear)
 - Real-time sync via **MessageClient** + **WearableListenerService**
 - Same `applicationId` on phone + wear; phone embeds wear with `wearApp(project(":wear"))` (secondary — Galaxy Watch auto-install often fails)
 - Phone idle screen: **토너먼트** / **워치 앱 열기** / **워치에 설치**
-
----
-
-## Serve speed UX (1.3.0)
-
-1. During an active match, toggle **스피드 온** (landscape corner or portrait controls)
-2. Grant camera permission; optional preview overlay (upper frame = serve band)
-3. After a point (or match start), next motion peak in the upper/far band → **1st 서브** + **추정 N km/h** gold pulse
-4. No return within ~3.8s, or return-like mid-frame motion without a score change → **폴트** → wait for **2nd**
-5. On point scored (from Wear/phone) → clear flash, reset to 1st for the next server
-6. Tap calibration chip to cycle **네트 근처 표준 거리** ↔ **베이스라인 먼 거리** (scale factor only)
-
-**Honest accuracy:** UI always says **추정 km/h** / 「카메라 모션 추정 · 레이더 아님」. This is pixels/time × calibration — not radar or ball-tracking CV.
-
-### Limitations / next steps
-
-- Motion-energy MVP only (no TFLite / no true ball track); false positives from players/shadows possible
-- Calibration is preset scale factors — on-court measured calibration UI is the next step
-- Fault / no-return heuristics are time + region based, not bounce/net detection
-- Wear shows a small `1st · 추정 N` line when phone pushes `/tanniscoring/serve`
 
 ---
 
@@ -61,7 +41,7 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 
 1. **Uninstall old phone app** `com.tanniscoring.app` (any previous version).
 2. **Uninstall old Wear package** `com.tanniscoring.wear` from the Galaxy Watch / Wear OS device if present.
-3. Install **1.3.0** phone APK/AAB (`tanniscoring-app-1.3.0.*`). Wear may auto-install via embed; if not, use phone **워치에 설치** or watch Play.
+3. Install **1.3.1** phone APK/AAB (`tanniscoring-app-1.3.1.*`). Wear may auto-install via embed; if not, use phone **워치에 설치** or watch Play.
 4. On the phone idle screen tap **워치 앱 열기**, or open **테니스코어링** from the **watch launcher**.
 5. Single match: watch **경기 시작** → phone scoreboard. Tournament: phone **토너먼트** → select match → watch scores.
 
@@ -73,26 +53,28 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 - [ ] Watch: long-press → undo on both
 - [ ] Tournament: create 4-player bracket → play semi → winner appears in final
 - [ ] Phone optional A/B/undo still works (events → Wear)
-- [ ] 스피드 온 → camera preview → motion shows 추정 km/h flash (not claimed as radar)
+- [ ] Wear **경기 종료** → idle + phone scoreboard clears (`matchActive=false`)
+- [ ] Tournament leave/end/new setup → no leftover player names
+- [ ] No 스피드 온 / camera serve-speed UI
 
 ---
 
 ## Architecture
 
 ```
-:shared   Pure Kotlin — TennisScoringEngine, MatchState, ServeSessionEngine, TournamentBracket, SyncJson
+:shared   Pure Kotlin — TennisScoringEngine, MatchState, TournamentBracket, SyncJson
 :wear     Wear OS — scoring authority + MessageClient (applicationId = com.tanniscoring.app)
-:app      Phone — scoreboard + tournament + serve camera MVP + wearApp(:wear) embed
+:app      Phone — scoreboard + tournament + wearApp(:wear) embed
 ```
 
-**Wear is the source of truth for scoring.** Phone owns tournament bracket + serve session.
+**Wear is the source of truth for scoring.** Phone owns tournament bracket + live scoreboard.
 
 1. Wear starts match (or phone tournament sends START) → Wear owns scoring engine
 2. Wear tap A/B / long-press undo → MessageClient `PATH_STATE` → phone
-3. Phone listener → scoreboard UI (+ tournament advance on match over; serve session reset on point)
+3. Phone listener → scoreboard UI (+ tournament advance on match over)
 4. Phone optional A/B/Undo → MessageClient `PATH_EVENT` → Wear
-5. Phone serve flash → MessageClient `PATH_SERVE` → Wear small text
-6. On connect / open: Wear resends state; phone can `PATH_REQUEST_STATE`
+5. On connect / open: Wear resends state; phone can `PATH_REQUEST_STATE`
+6. Wear **경기 종료** (or phone END) → Wear idle + `matchActive=false` to phone
 
 No backend. Google Play Services Wearable Data Layer only.
 
@@ -102,9 +84,9 @@ No backend. Google Play Services Wearable Data Layer only.
 
 | Module | Role |
 |--------|------|
-| `:shared` | Scoring rules + serve session + tournament bracket + unit tests |
-| `:wear` | Start match, large A/B taps, long-press undo, broadcast state, show serve estimate |
-| `:app` | Live scoreboard, tournament, CameraX serve MVP; embeds wear |
+| `:shared` | Scoring rules + tournament bracket + unit tests |
+| `:wear` | Start match, large A/B taps, long-press undo, **경기 종료**, broadcast state |
+| `:app` | Live scoreboard + tournament; embeds wear |
 
 ---
 
@@ -136,7 +118,7 @@ No backend. Google Play Services Wearable Data Layer only.
 
 ```
 Tanniscoring/
-├── app/      # Phone scoreboard + tournament + serve camera (+ wearApp embed)
+├── app/      # Phone scoreboard + tournament (+ wearApp embed)
 ├── wear/     # Wear scoring authority
 ├── shared/   # Pure Kotlin + JUnit
 └── README.md
@@ -147,6 +129,5 @@ Tanniscoring/
 - No iOS / watchOS
 - No cloud / Firebase
 - History / tournament persistence is local SharedPreferences only
-- Serve speed is motion-estimate only (see Serve speed UX)
 
 Packaged for `soltlove0885-dev/Tanniscoring`.

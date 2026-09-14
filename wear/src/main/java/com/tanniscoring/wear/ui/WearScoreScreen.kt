@@ -47,6 +47,7 @@ fun WearScoreScreen(
     onStart: () -> Unit,
     onToggleServer: () -> Unit = {},
     onNewMatch: () -> Unit = {},
+    onEndMatch: () -> Unit = {},
 ) {
     val view = LocalView.current
     fun hapticPoint() {
@@ -137,17 +138,6 @@ fun WearScoreScreen(
                     },
                     modifier = Modifier.padding(top = 2.dp),
                 )
-                val serveText = state.serveWearText
-                if (!match.isMatchOver && serveText != null) {
-                    Text(
-                        text = serveText,
-                        style = MaterialTheme.typography.caption2,
-                        fontWeight = FontWeight.Bold,
-                        color = WearCourtColors.Serve,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
                 if (!match.isMatchOver) {
                     Text(
                         text = stringResource(R.string.long_press_undo),
@@ -159,7 +149,7 @@ fun WearScoreScreen(
 
             if (match.isMatchOver) {
                 Button(
-                    onClick = onNewMatch,
+                    onClick = onEndMatch,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 8.dp),
@@ -168,23 +158,48 @@ fun WearScoreScreen(
                         contentColor = WearCourtColors.TextPrimary,
                     ),
                 ) {
-                    Text(stringResource(R.string.new_match), fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.end_match), fontWeight = FontWeight.Bold)
                 }
             } else {
-                PointButtons(
-                    onPointA = {
-                        hapticPoint()
-                        onPointA()
-                    },
-                    onPointB = {
-                        hapticPoint()
-                        onPointB()
-                    },
-                    onLongPressUndo = {
-                        hapticUndo()
-                        onUndo()
-                    },
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    PointButtons(
+                        onPointA = {
+                            hapticPoint()
+                            onPointA()
+                        },
+                        onPointB = {
+                            hapticPoint()
+                            onPointB()
+                        },
+                        onLongPressUndo = {
+                            hapticUndo()
+                            onUndo()
+                        },
+                    )
+                    Button(
+                        onClick = {
+                            hapticUndo()
+                            onEndMatch()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp)
+                            .height(36.dp),
+                        colors = ButtonDefaults.secondaryButtonColors(
+                            backgroundColor = WearCourtColors.Surface,
+                            contentColor = WearCourtColors.TextSecondary,
+                        ),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.end_match),
+                            style = MaterialTheme.typography.caption2,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
             }
         }
     }
