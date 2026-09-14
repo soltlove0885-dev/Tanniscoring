@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -77,7 +79,7 @@ fun WearScoreScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(WearCourtColors.Black)
-            .padding(4.dp),
+            .padding(2.dp),
         contentAlignment = Alignment.Center,
     ) {
         when (state.screen) {
@@ -304,12 +306,16 @@ fun WearScoreScreen(
                         modifier = Modifier.weight(1f),
                     )
                 }
-                Text(
+                AutoSizeText(
                     text = stringResource(R.string.long_press_hint),
-                    style = MaterialTheme.typography.caption3,
+                    fontSize = 9.sp,
+                    minFontSize = 7.sp,
+                    maxLines = 1,
                     color = WearCourtColors.TextMuted,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(bottom = 2.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 2.dp),
                 )
             }
         }
@@ -425,12 +431,16 @@ private fun BadmintonScoreWear(
                     serveIconRes = R.drawable.ic_serve_shuttlecock,
                 )
             }
-            Text(
+            AutoSizeText(
                 text = stringResource(R.string.long_press_hint),
-                style = MaterialTheme.typography.caption3,
+                fontSize = 9.sp,
+                minFontSize = 7.sp,
+                maxLines = 1,
                 color = WearCourtColors.TextMuted,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 2.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 2.dp),
             )
         }
     }
@@ -466,37 +476,44 @@ private fun ScoreSquare(
                 onClick = onPoint,
                 onLongClick = onUndo,
             )
-            .padding(6.dp),
+            .padding(4.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
             if (isServing) {
                 Image(
                     painter = painterResource(serveIconRes),
                     contentDescription = null,
-                    modifier = Modifier.size(14.dp),
+                    modifier = Modifier.size(12.dp),
                 )
-                Spacer(Modifier.height(2.dp))
+                Spacer(Modifier.height(1.dp))
             }
-            Text(
-                text = label.take(8),
+            AutoSizeText(
+                text = label,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.caption2,
+                fontSize = 11.sp,
+                minFontSize = 8.sp,
                 fontWeight = FontWeight.Bold,
                 color = if (isServing) WearCourtColors.Serve else WearCourtColors.TextSecondary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
             )
-            Text(
+            AutoSizeText(
                 text = points,
-                fontSize = if (square) 36.sp else 40.sp,
+                fontSize = if (square) 34.sp else 38.sp,
+                minFontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = WearCourtColors.TextPrimary,
-                maxLines = 1,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
             )
             Box(
                 modifier = Modifier
                     .padding(top = 2.dp)
-                    .width(20.dp)
+                    .width(18.dp)
                     .height(3.dp)
                     .clip(RoundedCornerShape(2.dp))
                     .background(accent.copy(alpha = if (isServing) 1f else 0.45f)),
@@ -515,12 +532,15 @@ private fun EndMatchConfirm(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.padding(12.dp),
     ) {
-        Text(
+        AutoSizeText(
             text = stringResource(R.string.end_match_confirm),
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.body2,
+            fontSize = 14.sp,
+            minFontSize = 10.sp,
+            maxLines = 2,
             fontWeight = FontWeight.Bold,
             color = WearCourtColors.TextPrimary,
+            modifier = Modifier.fillMaxWidth(),
         )
         Button(
             onClick = onConfirm,
@@ -556,38 +576,56 @@ private fun LanguageWear(
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(
+        AutoSizeText(
             text = stringResource(R.string.choose_language),
-            style = MaterialTheme.typography.title3,
+            fontSize = 16.sp,
+            minFontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             color = WearCourtColors.TextPrimary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
         )
         Button(
             onClick = onKorean,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(44.dp),
+                .height(42.dp),
             colors = ButtonDefaults.primaryButtonColors(
                 backgroundColor = WearCourtColors.Accent,
                 contentColor = WearCourtColors.Black,
             ),
         ) {
-            Text(stringResource(R.string.language_korean), fontWeight = FontWeight.Bold)
+            AutoSizeText(
+                text = stringResource(R.string.language_korean),
+                fontSize = 15.sp,
+                minFontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = WearCourtColors.Black,
+            )
         }
         Button(
             onClick = onEnglish,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(44.dp),
+                .height(42.dp),
             colors = ButtonDefaults.secondaryButtonColors(
                 backgroundColor = WearCourtColors.Surface,
                 contentColor = WearCourtColors.TextPrimary,
             ),
         ) {
-            Text(stringResource(R.string.language_english), fontWeight = FontWeight.Bold)
+            AutoSizeText(
+                text = stringResource(R.string.language_english),
+                fontSize = 15.sp,
+                minFontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = WearCourtColors.TextPrimary,
+            )
         }
     }
 }
@@ -600,50 +638,73 @@ private fun SportPickerWear(
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(
+        AutoSizeText(
             text = stringResource(R.string.choose_sport),
-            style = MaterialTheme.typography.title3,
+            fontSize = 16.sp,
+            minFontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             color = WearCourtColors.TextPrimary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
         )
         Button(
             onClick = onTennis,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(44.dp),
+                .height(42.dp),
             colors = ButtonDefaults.primaryButtonColors(
                 backgroundColor = WearCourtColors.Accent,
                 contentColor = WearCourtColors.Black,
             ),
         ) {
-            Text(stringResource(R.string.sport_tennis), fontWeight = FontWeight.Bold)
+            AutoSizeText(
+                text = stringResource(R.string.sport_tennis),
+                fontSize = 15.sp,
+                minFontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = WearCourtColors.Black,
+            )
         }
         Button(
             onClick = onBadminton,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(44.dp),
+                .height(42.dp),
             colors = ButtonDefaults.primaryButtonColors(
                 backgroundColor = WearCourtColors.Serve,
                 contentColor = WearCourtColors.Black,
             ),
         ) {
-            Text(stringResource(R.string.sport_badminton), fontWeight = FontWeight.Bold)
+            AutoSizeText(
+                text = stringResource(R.string.sport_badminton),
+                fontSize = 15.sp,
+                minFontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = WearCourtColors.Black,
+            )
         }
         Button(
             onClick = onLanguage,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(36.dp),
+                .height(34.dp),
             colors = ButtonDefaults.secondaryButtonColors(
                 backgroundColor = WearCourtColors.Surface,
                 contentColor = WearCourtColors.TextSecondary,
             ),
         ) {
-            Text(stringResource(R.string.change_language), style = MaterialTheme.typography.caption1)
+            AutoSizeText(
+                text = stringResource(R.string.change_language),
+                fontSize = 12.sp,
+                minFontSize = 9.sp,
+                color = WearCourtColors.TextSecondary,
+            )
         }
     }
 }
@@ -658,46 +719,57 @@ private fun StartMatchWear(
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(
+        AutoSizeText(
             text = stringResource(
                 if (sport == SportType.BADMINTON) R.string.sport_badminton else R.string.sport_tennis,
             ),
-            style = MaterialTheme.typography.title3,
+            fontSize = 16.sp,
+            minFontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             color = WearCourtColors.TextPrimary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
         )
-        Text(
+        AutoSizeText(
             text = if (sport == SportType.BADMINTON) {
                 stringResource(R.string.badminton_rules)
             } else {
                 stringResource(R.string.start_defaults)
             },
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.caption2,
+            fontSize = 11.sp,
+            minFontSize = 9.sp,
+            maxLines = 2,
             color = WearCourtColors.TextSecondary,
+            modifier = Modifier.fillMaxWidth(),
         )
         if (sport == SportType.TENNIS) {
             Button(
                 onClick = onToggleNoAd,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(40.dp),
+                    .height(38.dp),
                 colors = ButtonDefaults.secondaryButtonColors(
                     backgroundColor = if (noAd) WearCourtColors.AccentDim else WearCourtColors.Surface,
                     contentColor = if (noAd) WearCourtColors.TextPrimary else WearCourtColors.TextSecondary,
                 ),
             ) {
-                Text(
+                AutoSizeText(
                     text = if (noAd) {
                         stringResource(R.string.no_ad_on)
                     } else {
                         stringResource(R.string.no_ad_off)
                     },
-                    style = MaterialTheme.typography.caption1,
+                    fontSize = 12.sp,
+                    minFontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
+                    color = if (noAd) WearCourtColors.TextPrimary else WearCourtColors.TextSecondary,
                 )
             }
         }
@@ -705,29 +777,36 @@ private fun StartMatchWear(
             onClick = onStart,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp),
+                .height(46.dp),
             colors = ButtonDefaults.primaryButtonColors(
                 backgroundColor = WearCourtColors.Accent,
                 contentColor = WearCourtColors.Black,
             ),
         ) {
-            Text(
+            AutoSizeText(
                 text = stringResource(R.string.start_match),
-                fontSize = 16.sp,
+                fontSize = 15.sp,
+                minFontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
+                color = WearCourtColors.Black,
             )
         }
         Button(
             onClick = onBackSports,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(36.dp),
+                .height(34.dp),
             colors = ButtonDefaults.secondaryButtonColors(
                 backgroundColor = WearCourtColors.Surface,
                 contentColor = WearCourtColors.TextSecondary,
             ),
         ) {
-            Text(stringResource(R.string.back_to_sports), style = MaterialTheme.typography.caption1)
+            AutoSizeText(
+                text = stringResource(R.string.back_to_sports),
+                fontSize = 12.sp,
+                minFontSize = 9.sp,
+                color = WearCourtColors.TextSecondary,
+            )
         }
     }
 }

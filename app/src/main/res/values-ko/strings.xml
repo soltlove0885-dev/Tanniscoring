@@ -31,8 +31,9 @@
     <string name="recent_matches">최근 경기</string>
     <string name="waiting_for_wear">워치에서 경기를 시작하세요</string>
     <string name="waiting_for_wear_hint">Galaxy Watch에서 「테니스코어링」을 연 뒤 「경기 시작」을 누르면 이 화면이 실시간 스코어보드로 바뀝니다. 자동 설치가 안 되면 아래 「워치에 설치」를 사용하세요.</string>
-    <string name="scoring_from_wear">워치에서 득점 중</string>
-    <string name="phone_mirror_hint">아래 버튼은 워치로 이벤트를 보냅니다 (선택)</string>
+    <string name="scoring_from_wear">워치 연동 · 폰에서도 득점 가능</string>
+    <string name="phone_mirror_hint">A/B 탭 = 득점 · 길게 = 되돌리기 (워치 동기화)</string>
+    <string name="phone_score_hint">A/B 탭 = 득점 · 길게 = 되돌리기</string>
     <string name="refresh_wear_state">재연결</string>
     <string name="sync_hint">워치가 채점 권한입니다. 동일 패키지(com.tanniscoring.app) MessageClient로 점수가 실시간 동기화됩니다.</string>
     <string name="wear_connected">워치 페어링됨</string>

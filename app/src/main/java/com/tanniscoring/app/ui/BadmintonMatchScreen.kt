@@ -2,9 +2,11 @@ package com.tanniscoring.app.ui
 
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -63,7 +65,13 @@ fun BadmintonMatchScreen(
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     if (isLandscape) {
-        BadmintonLandscape(state, match)
+        BadmintonLandscape(
+            state = state,
+            match = match,
+            onPointA = onPointA,
+            onPointB = onPointB,
+            onUndo = onUndo,
+        )
     } else {
         BadmintonPortrait(
             state = state,
@@ -79,13 +87,20 @@ fun BadmintonMatchScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun BadmintonLandscape(state: MatchUiState, match: BadmintonMatchState) {
+private fun BadmintonLandscape(
+    state: MatchUiState,
+    match: BadmintonMatchState,
+    onPointA: () -> Unit,
+    onPointB: () -> Unit,
+    onUndo: () -> Unit,
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(CourtColors.Black)
-            .padding(16.dp),
+            .padding(12.dp),
     ) {
         Row(
             modifier = Modifier
@@ -98,20 +113,28 @@ private fun BadmintonLandscape(state: MatchUiState, match: BadmintonMatchState) 
                 points = match.pointsA.toString(),
                 accent = CourtColors.Accent,
                 isServing = match.server == Side.A && !match.isMatchOver,
+                enabled = !match.isMatchOver,
+                onPoint = onPointA,
+                onUndo = onUndo,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(),
             )
-            Text(
+            AutoSizeText(
                 text = stringResource(R.string.points),
                 color = CourtColors.TextMuted,
-                modifier = Modifier.padding(horizontal = 12.dp),
+                fontSize = 12.sp,
+                minFontSize = 9.sp,
+                modifier = Modifier.padding(horizontal = 8.dp),
             )
             BadmintonSide(
                 name = match.playerB,
                 points = match.pointsB.toString(),
                 accent = CourtColors.Serve,
                 isServing = match.server == Side.B && !match.isMatchOver,
+                enabled = !match.isMatchOver,
+                onPoint = onPointB,
+                onUndo = onUndo,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(),
@@ -127,6 +150,14 @@ private fun BadmintonLandscape(state: MatchUiState, match: BadmintonMatchState) 
                     color = CourtColors.Danger,
                     fontWeight = FontWeight.Bold,
                 )
+            } else {
+                AutoSizeText(
+                    text = stringResource(R.string.phone_score_hint),
+                    color = CourtColors.TextMuted,
+                    fontSize = 10.sp,
+                    minFontSize = 8.sp,
+                    maxLines = 1,
+                )
             }
             Text(
                 text = if (state.wearConnected) {
@@ -136,27 +167,38 @@ private fun BadmintonLandscape(state: MatchUiState, match: BadmintonMatchState) 
                 },
                 color = CourtColors.TextMuted,
                 fontSize = 10.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BadmintonSide(
     name: String,
     points: String,
     accent: androidx.compose.ui.graphics.Color,
     isServing: Boolean,
+    enabled: Boolean = false,
+    onPoint: () -> Unit = {},
+    onUndo: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(16.dp)
     Column(
         modifier = modifier
-            .padding(8.dp)
+            .padding(6.dp)
             .clip(shape)
             .background(if (isServing) CourtColors.ServeContainer else CourtColors.Surface)
             .border(2.dp, if (isServing) CourtColors.Serve else accent, shape)
-            .padding(16.dp),
+            .combinedClickable(
+                enabled = enabled,
+                onClick = onPoint,
+                onLongClick = onUndo,
+            )
+            .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -164,24 +206,29 @@ private fun BadmintonSide(
             Image(
                 painter = painterResource(R.drawable.ic_serve_shuttlecock),
                 contentDescription = stringResource(R.string.cd_badminton_serve),
-                modifier = Modifier.size(22.dp),
+                modifier = Modifier.size(20.dp),
             )
             Spacer(Modifier.height(4.dp))
         }
-        Text(
+        AutoSizeText(
             text = name,
             color = if (isServing) CourtColors.Serve else accent,
             fontWeight = FontWeight.Bold,
-            fontSize = 20.sp,
+            fontSize = 18.sp,
+            minFontSize = 11.sp,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
         )
-        Spacer(Modifier.height(12.dp))
-        Text(
+        Spacer(Modifier.height(8.dp))
+        AutoSizeText(
             text = points,
             color = CourtColors.TextPrimary,
             fontWeight = FontWeight.Bold,
-            fontSize = 96.sp,
+            fontSize = 88.sp,
+            minFontSize = 36.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -232,17 +279,19 @@ private fun BadmintonPortrait(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (state.scoringFromWear) {
-                Text(
+                AutoSizeText(
                     text = stringResource(R.string.scoring_from_wear),
-                    style = MaterialTheme.typography.labelLarge,
                     color = CourtColors.Serve,
                     fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    minFontSize = 11.sp,
+                    maxLines = 2,
+                    textAlign = TextAlign.Center,
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(8.dp))
                         .background(CourtColors.ServeContainer)
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    textAlign = TextAlign.Center,
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
                 )
                 Spacer(Modifier.height(8.dp))
             }
@@ -262,6 +311,9 @@ private fun BadmintonPortrait(
                     points = match.pointsA.toString(),
                     accent = CourtColors.Accent,
                     isServing = match.server == Side.A && !match.isMatchOver,
+                    enabled = !match.isMatchOver,
+                    onPoint = onPointA,
+                    onUndo = onUndo,
                     modifier = Modifier
                         .weight(1f)
                         .height(180.dp),
@@ -271,6 +323,9 @@ private fun BadmintonPortrait(
                     points = match.pointsB.toString(),
                     accent = CourtColors.Serve,
                     isServing = match.server == Side.B && !match.isMatchOver,
+                    enabled = !match.isMatchOver,
+                    onPoint = onPointB,
+                    onUndo = onUndo,
                     modifier = Modifier
                         .weight(1f)
                         .height(180.dp),
@@ -291,10 +346,14 @@ private fun BadmintonPortrait(
                 )
                 Text(stringResource(R.string.winner_fmt, winnerName), color = CourtColors.TextPrimary)
             } else {
-                Text(
-                    text = stringResource(R.string.phone_mirror_hint),
-                    style = MaterialTheme.typography.labelSmall,
+                AutoSizeText(
+                    text = stringResource(R.string.phone_score_hint),
                     color = CourtColors.TextMuted,
+                    fontSize = 12.sp,
+                    minFontSize = 10.sp,
+                    maxLines = 2,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(8.dp))
                 Row(
@@ -305,25 +364,37 @@ private fun BadmintonPortrait(
                         onClick = onPointA,
                         modifier = Modifier
                             .weight(1f)
-                            .height(72.dp),
+                            .height(64.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = CourtColors.AccentDim,
                             contentColor = CourtColors.TextPrimary,
                         ),
                     ) {
-                        Text(stringResource(R.string.point_a), fontSize = 18.sp)
+                        AutoSizeText(
+                            text = stringResource(R.string.point_a),
+                            color = CourtColors.TextPrimary,
+                            fontSize = 18.sp,
+                            minFontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
                     }
                     Button(
                         onClick = onPointB,
                         modifier = Modifier
                             .weight(1f)
-                            .height(72.dp),
+                            .height(64.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = CourtColors.ServeDim,
                             contentColor = CourtColors.TextPrimary,
                         ),
                     ) {
-                        Text(stringResource(R.string.point_b), fontSize = 18.sp)
+                        AutoSizeText(
+                            text = stringResource(R.string.point_b),
+                            color = CourtColors.TextPrimary,
+                            fontSize = 18.sp,
+                            minFontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
                     }
                 }
                 Spacer(Modifier.height(12.dp))

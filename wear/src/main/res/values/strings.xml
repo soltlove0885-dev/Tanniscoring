@@ -6,12 +6,12 @@
     <string name="undo">Undo</string>
     <string name="toggle_server">Serve</string>
     <string name="start_match">Start</string>
-    <string name="start_defaults">Player A / B · Best of 3</string>
+    <string name="start_defaults">A / B · Best of 3</string>
     <string name="long_press_undo">Long-press to undo</string>
-    <string name="long_press_hint">Hold score = undo · Hold title = end</string>
+    <string name="long_press_hint">Hold score=undo · title=end</string>
     <string name="new_match">New match</string>
     <string name="end_match">End</string>
-    <string name="end_match_confirm">End this match?</string>
+    <string name="end_match_confirm">End match?</string>
     <string name="cancel">Cancel</string>
     <string name="deuce">Deuce</string>
     <string name="advantage_short">AD</string>

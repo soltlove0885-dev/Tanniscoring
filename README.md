@@ -1,4 +1,4 @@
-# Tanniscoring (테니스코어링) 1.5.1
+# Tanniscoring (테니스코어링) 1.5.2
 
 Android phone + Wear OS multi-sport score app (Tennis + Badminton), bilingual KO/EN.
 
@@ -6,7 +6,7 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 
 | | |
 |---|---|
-| Version | **1.5.1** (versionCode phone **29** / wear **30**) |
+| Version | **1.5.2** (versionCode phone **31** / wear **32**) |
 | applicationId (phone **and** wear) | `com.tanniscoring.app` |
 | minSdk | Phone 26 / Wear 30 |
 | UI | Jetpack Compose + Wear Compose (Korean / English) |
@@ -18,13 +18,21 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 - **First launch**: language picker (한국어 / English) — AppCompat per-app locales (`AppCompatDelegate.setApplicationLocales`); change later from home
 - **Home**: choose sport — **Tennis** or **Badminton**
 - **Wear OS watch is primary**: start match on watch → **tap score box = point**, **long-press box = undo**
-- **Phone is live scoreboard** (optional A/B/undo that send events to Wear)
+- **Phone can also score**: tap A/B (score side or button) = point, long-press = undo; stays enabled while watch is connected (1.4.1 dedupe prevents double-count)
+- **Phone is live scoreboard** (portrait + landscape)
 - **Server indicator**: color highlight + **tennis ball** (tennis) / **shuttlecock** (badminton) above serving side (phone + Wear)
 - **Tennis**: No-Ad + tournament (phone)
 - **Badminton**: rally to 21, win by 2, cap at 30; rally winner serves
 - **Reconnect**: refresh / re-request Wear state
 - Real-time sync via **MessageClient** + **WearableListenerService**
 - Same `applicationId` on phone + wear; phone embeds wear with `wearApp(project(":wear"))`
+
+### 1.5.2
+
+- Fix clipped KO/EN text on phone + Wear (auto-size labels, tighter padding, scroll on pickers / round watch)
+- Phone scoring always available when a match is live: tap A/B = point, long-press = undo (portrait + landscape), synced to Wear without disabling controls when watch is connected
+- Keep 1.4.1 requestId/sequence dedupe + mirror debounce (no double-count)
+- Wear language picker / sport picker remain scrollable; AppCompat locales unchanged
 
 ### 1.5.1
 
@@ -64,7 +72,7 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 :app      Phone — scoreboard + tournament + language/sport pickers + wearApp(:wear)
 ```
 
-**Wear is the source of truth for scoring.** Phone owns tournament bracket + live scoreboard.
+**Wear is the source of truth for scoring.** Phone owns tournament bracket + live scoreboard and can mirror POINT/UNDO to Wear.
 
 ---
 
@@ -77,7 +85,7 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 
 Packaged AABs:
 
-- `tanniscoring-app-vc29-1.5.1.aab`
-- `tanniscoring-wear-vc30-1.5.1.aab`
+- `tanniscoring-app-vc31-1.5.2.aab`
+- `tanniscoring-wear-vc32-1.5.2.aab`
 
 Packaged for `soltlove0885-dev/Tanniscoring`.

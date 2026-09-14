@@ -2,10 +2,12 @@ package com.tanniscoring.app.ui
 
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -69,6 +71,9 @@ fun MatchScreen(
         LandscapeScoreboard(
             state = state,
             match = match,
+            onPointA = onPointA,
+            onPointB = onPointB,
+            onUndo = onUndo,
             onToggleServer = onToggleServer,
         )
     } else {
@@ -87,23 +92,27 @@ fun MatchScreen(
     }
 }
 
-/** Court scoreboard: huge scores, almost no chrome. */
+/** Court scoreboard: huge scores; tap A/B = point, long-press = undo (synced to Wear). */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun LandscapeScoreboard(
     state: MatchUiState,
     match: MatchState,
+    onPointA: () -> Unit,
+    onPointB: () -> Unit,
+    onUndo: () -> Unit,
     onToggleServer: () -> Unit,
 ) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(CourtColors.Black)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 56.dp),
+                .padding(bottom = 52.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             LandscapeSideColumn(
@@ -112,7 +121,9 @@ private fun LandscapeScoreboard(
                 games = match.gamesA,
                 points = match.pointDisplayA,
                 isServing = match.server == Side.A && !match.isMatchOver,
-                onServerTap = onToggleServer,
+                enabled = !match.isMatchOver,
+                onPoint = onPointA,
+                onUndo = onUndo,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(),
@@ -120,15 +131,15 @@ private fun LandscapeScoreboard(
 
             Column(
                 modifier = Modifier
-                    .width(72.dp)
+                    .width(56.dp)
                     .fillMaxHeight(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
                 LandscapeAxisLabel(stringResource(R.string.sets))
-                Spacer(Modifier.height(28.dp))
+                Spacer(Modifier.height(24.dp))
                 LandscapeAxisLabel(stringResource(R.string.games))
-                Spacer(Modifier.height(36.dp))
+                Spacer(Modifier.height(28.dp))
                 LandscapeAxisLabel(stringResource(R.string.points))
             }
 
@@ -138,7 +149,9 @@ private fun LandscapeScoreboard(
                 games = match.gamesB,
                 points = match.pointDisplayB,
                 isServing = match.server == Side.B && !match.isMatchOver,
-                onServerTap = onToggleServer,
+                enabled = !match.isMatchOver,
+                onPoint = onPointB,
+                onUndo = onUndo,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(),
@@ -149,10 +162,23 @@ private fun LandscapeScoreboard(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .padding(bottom = 4.dp),
+                .padding(bottom = 2.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             MatchStatusLine(match)
+            if (!match.isMatchOver) {
+                Text(
+                    text = stringResource(R.string.phone_score_hint),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = CourtColors.TextMuted,
+                    fontSize = 10.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .clickable(onClick = onToggleServer)
+                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                )
+            }
             Text(
                 text = if (state.wearConnected) {
                     stringResource(R.string.wear_connected)
@@ -162,11 +188,14 @@ private fun LandscapeScoreboard(
                 style = MaterialTheme.typography.labelSmall,
                 color = CourtColors.TextMuted,
                 fontSize = 10.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun LandscapeSideColumn(
     name: String,
@@ -174,13 +203,15 @@ private fun LandscapeSideColumn(
     games: Int,
     points: String,
     isServing: Boolean,
-    onServerTap: () -> Unit,
+    enabled: Boolean,
+    onPoint: () -> Unit,
+    onUndo: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(16.dp)
     Column(
         modifier = modifier
-            .padding(horizontal = 6.dp, vertical = 4.dp)
+            .padding(horizontal = 4.dp, vertical = 4.dp)
             .clip(shape)
             .background(
                 if (isServing) CourtColors.ServeContainer else CourtColors.Surface,
@@ -192,30 +223,35 @@ private fun LandscapeSideColumn(
                     Modifier.border(1.dp, CourtColors.Border, shape)
                 },
             )
-            .clickable(onClick = onServerTap)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .combinedClickable(
+                enabled = enabled,
+                onClick = onPoint,
+                onLongClick = onUndo,
+            )
+            .padding(horizontal = 8.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         if (isServing) {
             ServeDot(size = 14.dp)
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(2.dp))
         }
-        Text(
+        AutoSizeText(
             text = name,
             color = if (isServing) CourtColors.Serve else CourtColors.TextPrimary,
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
+            minFontSize = 11.sp,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
         )
+        Spacer(Modifier.height(6.dp))
+        LandscapeScoreValue(sets.toString(), 32.sp)
         Spacer(Modifier.height(8.dp))
-        LandscapeScoreValue(sets.toString(), 36.sp)
-        Spacer(Modifier.height(10.dp))
-        LandscapeScoreValue(games.toString(), 44.sp)
-        Spacer(Modifier.height(10.dp))
-        LandscapeScoreValue(points, 72.sp, emphasize = true)
+        LandscapeScoreValue(games.toString(), 40.sp)
+        Spacer(Modifier.height(8.dp))
+        LandscapeScoreValue(points, 64.sp, emphasize = true)
     }
 }
 
@@ -225,11 +261,12 @@ private fun LandscapeScoreValue(
     size: TextUnit,
     emphasize: Boolean = false,
 ) {
-    Text(
+    AutoSizeText(
         text = text,
-        color = if (emphasize) CourtColors.TextPrimary else CourtColors.TextPrimary,
+        color = CourtColors.TextPrimary,
         fontWeight = FontWeight.Bold,
         fontSize = size,
+        minFontSize = (size.value * 0.45f).coerceAtLeast(16f).sp,
         textAlign = TextAlign.Center,
         maxLines = 1,
         modifier = Modifier.fillMaxWidth(),
@@ -238,12 +275,14 @@ private fun LandscapeScoreValue(
 
 @Composable
 private fun LandscapeAxisLabel(text: String) {
-    Text(
+    AutoSizeText(
         text = text,
         color = CourtColors.TextMuted,
         fontSize = 11.sp,
+        minFontSize = 8.sp,
         fontWeight = FontWeight.Medium,
         textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth(),
     )
 }
 
@@ -295,17 +334,19 @@ private fun PortraitMatchScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (state.scoringFromWear) {
-                Text(
+                AutoSizeText(
                     text = stringResource(R.string.scoring_from_wear),
-                    style = MaterialTheme.typography.labelLarge,
                     color = CourtColors.Serve,
                     fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    minFontSize = 11.sp,
+                    maxLines = 2,
+                    textAlign = TextAlign.Center,
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(8.dp))
                         .background(CourtColors.ServeContainer)
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    textAlign = TextAlign.Center,
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
                 )
                 Spacer(Modifier.height(8.dp))
             }
@@ -345,7 +386,9 @@ private fun PortraitMatchScreen(
                     games = match.gamesA,
                     points = match.pointDisplayA,
                     isServing = match.server == Side.A && !match.isMatchOver,
-                    onServerTap = onToggleServer,
+                    enabled = !match.isMatchOver,
+                    onPoint = onPointA,
+                    onUndo = onUndo,
                     modifier = Modifier.weight(1f),
                 )
                 Column(
@@ -363,7 +406,9 @@ private fun PortraitMatchScreen(
                     games = match.gamesB,
                     points = match.pointDisplayB,
                     isServing = match.server == Side.B && !match.isMatchOver,
-                    onServerTap = onToggleServer,
+                    enabled = !match.isMatchOver,
+                    onPoint = onPointB,
+                    onUndo = onUndo,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -413,11 +458,14 @@ private fun PortraitMatchScreen(
             Spacer(Modifier.height(16.dp))
 
             if (!match.isMatchOver) {
-                Text(
-                    text = stringResource(R.string.phone_mirror_hint),
-                    style = MaterialTheme.typography.labelSmall,
+                AutoSizeText(
+                    text = stringResource(R.string.phone_score_hint),
                     color = CourtColors.TextMuted,
+                    fontSize = 12.sp,
+                    minFontSize = 10.sp,
+                    maxLines = 2,
                     textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(8.dp))
                 Row(
@@ -428,25 +476,39 @@ private fun PortraitMatchScreen(
                         onClick = onPointA,
                         modifier = Modifier
                             .weight(1f)
-                            .height(72.dp),
+                            .height(64.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = CourtColors.AccentDim,
                             contentColor = CourtColors.TextPrimary,
                         ),
                     ) {
-                        Text(stringResource(R.string.point_a), fontSize = 18.sp)
+                        AutoSizeText(
+                            text = stringResource(R.string.point_a),
+                            color = CourtColors.TextPrimary,
+                            fontSize = 18.sp,
+                            minFontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                        )
                     }
                     Button(
                         onClick = onPointB,
                         modifier = Modifier
                             .weight(1f)
-                            .height(72.dp),
+                            .height(64.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = CourtColors.ServeDim,
                             contentColor = CourtColors.TextPrimary,
                         ),
                     ) {
-                        Text(stringResource(R.string.point_b), fontSize = 18.sp)
+                        AutoSizeText(
+                            text = stringResource(R.string.point_b),
+                            color = CourtColors.TextPrimary,
+                            fontSize = 18.sp,
+                            minFontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                        )
                     }
                 }
                 Spacer(Modifier.height(12.dp))
@@ -456,7 +518,12 @@ private fun PortraitMatchScreen(
                     modifier = Modifier.fillMaxWidth(),
                     border = BorderStroke(1.dp, CourtColors.Border),
                 ) {
-                    Text(stringResource(R.string.undo), color = CourtColors.TextSecondary)
+                    AutoSizeText(
+                        text = stringResource(R.string.undo),
+                        color = CourtColors.TextSecondary,
+                        fontSize = 14.sp,
+                        minFontSize = 11.sp,
+                    )
                 }
                 Spacer(Modifier.height(8.dp))
                 OutlinedButton(
@@ -502,6 +569,7 @@ private fun PortraitMatchScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PortraitScoreColumn(
     name: String,
@@ -509,7 +577,9 @@ private fun PortraitScoreColumn(
     games: Int,
     points: String,
     isServing: Boolean,
-    onServerTap: () -> Unit,
+    enabled: Boolean,
+    onPoint: () -> Unit,
+    onUndo: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(12.dp)
@@ -524,43 +594,48 @@ private fun PortraitScoreColumn(
                     Modifier.border(1.dp, CourtColors.Border, shape)
                 },
             )
-            .clickable(onClick = onServerTap)
-            .padding(10.dp),
+            .combinedClickable(
+                enabled = enabled,
+                onClick = onPoint,
+                onLongClick = onUndo,
+            )
+            .padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (isServing) {
             ServeDot(size = 12.dp)
             Spacer(Modifier.height(4.dp))
         }
-        Text(
+        AutoSizeText(
             text = name,
-            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
+            fontSize = 16.sp,
+            minFontSize = 11.sp,
             color = if (isServing) CourtColors.Serve else CourtColors.TextPrimary,
             textAlign = TextAlign.Center,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(8.dp))
-        ScoreCell(sets.toString(), 26.sp)
+        ScoreCell(sets.toString(), 24.sp)
         Spacer(Modifier.height(6.dp))
-        ScoreCell(games.toString(), 28.sp)
+        ScoreCell(games.toString(), 26.sp)
         Spacer(Modifier.height(6.dp))
-        ScoreCell(points, 34.sp, emphasize = true)
+        ScoreCell(points, 32.sp, emphasize = true)
     }
 }
 
 @Composable
 private fun ScoreCell(text: String, size: TextUnit, emphasize: Boolean = false) {
-    Text(
+    AutoSizeText(
         text = text,
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .background(if (emphasize) CourtColors.SurfaceCard else CourtColors.Surface)
-            .padding(vertical = 10.dp),
+            .padding(vertical = 8.dp),
         textAlign = TextAlign.Center,
         fontSize = size,
+        minFontSize = (size.value * 0.55f).coerceAtLeast(14f).sp,
         fontWeight = FontWeight.Bold,
         color = CourtColors.TextPrimary,
     )
@@ -568,12 +643,13 @@ private fun ScoreCell(text: String, size: TextUnit, emphasize: Boolean = false) 
 
 @Composable
 private fun AxisChip(text: String) {
-    Text(
+    AutoSizeText(
         text = text,
         modifier = Modifier
-            .padding(vertical = 14.dp)
-            .width(40.dp),
-        style = MaterialTheme.typography.labelMedium,
+            .padding(vertical = 12.dp)
+            .width(48.dp),
+        fontSize = 12.sp,
+        minFontSize = 8.sp,
         color = CourtColors.TextMuted,
         textAlign = TextAlign.Center,
     )

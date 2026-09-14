@@ -31,8 +31,9 @@
     <string name="recent_matches">Recent matches</string>
     <string name="waiting_for_wear">Start the match on your watch</string>
     <string name="waiting_for_wear_hint">Open 「Tanniscoring」 on your Galaxy Watch and tap 「Start match」. This screen becomes a live scoreboard. If auto-install failed, use 「Install on watch」 below.</string>
-    <string name="scoring_from_wear">Scoring from watch</string>
-    <string name="phone_mirror_hint">Buttons below send events to the watch (optional)</string>
+    <string name="scoring_from_wear">Synced with watch · phone can score too</string>
+    <string name="phone_mirror_hint">Tap A/B = point · Long-press = undo (synced to watch)</string>
+    <string name="phone_score_hint">Tap A/B = point · Long-press = undo</string>
     <string name="refresh_wear_state">Reconnect</string>
     <string name="sync_hint">The watch owns scoring. Scores sync in real time via MessageClient (same package com.tanniscoring.app).</string>
     <string name="wear_connected">Watch paired</string>
