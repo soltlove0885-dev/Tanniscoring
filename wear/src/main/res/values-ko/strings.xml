@@ -34,4 +34,7 @@
     <string name="badminton_rules">21점 · 2점차 · 30캡</string>
     <string name="badminton_game_over">게임 종료</string>
 
+
+    <string name="player_a">선수 A</string>
+    <string name="player_b">선수 B</string>
 </resources>

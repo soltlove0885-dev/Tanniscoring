@@ -4,23 +4,39 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- Tennis ball (left) -->
     <path
         android:fillColor="#C6FF00"
-        android:pathData="M54,30c13.3,0 24,10.7 24,24s-10.7,24 -24,24 -24,-10.7 -24,-24 10.7,-24 24,-24z" />
+        android:pathData="M38,36c11,0 20,9 20,20s-9,20 -20,20 -20,-9 -20,-20 9,-20 20,-20z" />
     <path
-        android:pathData="M40,38c7,9 7,27 0,36"
-        android:strokeWidth="3"
+        android:pathData="M27,42c5.5,7.5 5.5,22.5 0,30"
+        android:strokeWidth="2.8"
         android:strokeColor="#1B5E20"
         android:fillColor="#00000000"
         android:strokeLineCap="round" />
     <path
-        android:pathData="M68,38c-7,9 -7,27 0,36"
-        android:strokeWidth="3"
+        android:pathData="M49,42c-5.5,7.5 -5.5,22.5 0,30"
+        android:strokeWidth="2.8"
         android:strokeColor="#1B5E20"
         android:fillColor="#00000000"
         android:strokeLineCap="round" />
-    <!-- small score bars -->
+    <!-- Shuttlecock (right) -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M46,72h4v8h-4zM52,68h4v12h-4zM58,70h4v10h-4z" />
+        android:pathData="M72,28L60.5,58c1.6,0.9 3.8,1.5 6.2,1.5h5.6c2.4,0 4.6,-0.6 6.2,-1.5z" />
+    <path
+        android:pathData="M72,28L66,55.5M72,28L72,59.5M72,28L78,55.5"
+        android:strokeWidth="1.6"
+        android:strokeColor="#90A4AE"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round" />
+    <path
+        android:fillColor="#81D4FA"
+        android:pathData="M70.4,27.2c0.5,-1.1 2.7,-1.1 3.2,0L75.2,31H68.8z" />
+    <path
+        android:fillColor="#F5E6C8"
+        android:pathData="M66.2,60.5c0,-1.4 2.4,-2.6 5.8,-2.6s5.8,1.2 5.8,2.6c0,2 -2.4,3.7 -5.8,3.7s-5.8,-1.7 -5.8,-3.7z" />
+    <path
+        android:fillColor="#D7B56D"
+        android:pathData="M67.5,60h9v2c0,1.2 -2,2.2 -4.5,2.2S67.5,63.2 67.5,62z" />
 </vector>

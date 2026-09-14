@@ -2,6 +2,7 @@ package com.tanniscoring.app.ui
 
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -14,7 +15,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -31,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -92,6 +97,7 @@ private fun BadmintonLandscape(state: MatchUiState, match: BadmintonMatchState) 
                 name = match.playerA,
                 points = match.pointsA.toString(),
                 accent = CourtColors.Accent,
+                isServing = match.server == Side.A && !match.isMatchOver,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(),
@@ -105,6 +111,7 @@ private fun BadmintonLandscape(state: MatchUiState, match: BadmintonMatchState) 
                 name = match.playerB,
                 points = match.pointsB.toString(),
                 accent = CourtColors.Serve,
+                isServing = match.server == Side.B && !match.isMatchOver,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(),
@@ -139,6 +146,7 @@ private fun BadmintonSide(
     name: String,
     points: String,
     accent: androidx.compose.ui.graphics.Color,
+    isServing: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val shape = RoundedCornerShape(16.dp)
@@ -146,15 +154,23 @@ private fun BadmintonSide(
         modifier = modifier
             .padding(8.dp)
             .clip(shape)
-            .background(CourtColors.Surface)
-            .border(2.dp, accent, shape)
+            .background(if (isServing) CourtColors.ServeContainer else CourtColors.Surface)
+            .border(2.dp, if (isServing) CourtColors.Serve else accent, shape)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
+        if (isServing) {
+            Image(
+                painter = painterResource(R.drawable.ic_serve_shuttlecock),
+                contentDescription = stringResource(R.string.cd_badminton_serve),
+                modifier = Modifier.size(22.dp),
+            )
+            Spacer(Modifier.height(4.dp))
+        }
         Text(
             text = name,
-            color = accent,
+            color = if (isServing) CourtColors.Serve else accent,
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp,
             maxLines = 1,
@@ -245,6 +261,7 @@ private fun BadmintonPortrait(
                     name = match.playerA,
                     points = match.pointsA.toString(),
                     accent = CourtColors.Accent,
+                    isServing = match.server == Side.A && !match.isMatchOver,
                     modifier = Modifier
                         .weight(1f)
                         .height(180.dp),
@@ -253,6 +270,7 @@ private fun BadmintonPortrait(
                     name = match.playerB,
                     points = match.pointsB.toString(),
                     accent = CourtColors.Serve,
+                    isServing = match.server == Side.B && !match.isMatchOver,
                     modifier = Modifier
                         .weight(1f)
                         .height(180.dp),

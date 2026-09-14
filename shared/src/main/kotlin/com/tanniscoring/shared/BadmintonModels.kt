@@ -21,6 +21,7 @@ enum class SportType {
  * - First to 21, must win by 2
  * - From 20-20 continue until +2 or a side reaches 30 (cap)
  * - At 29-29, next point wins (30)
+ * - Winner of each rally serves next (server tracked for UI)
  */
 data class BadmintonMatchState(
     val playerA: String,
@@ -30,9 +31,11 @@ data class BadmintonMatchState(
     val isMatchOver: Boolean,
     val winner: Side?,
     val matchActive: Boolean = true,
+    /** Side currently serving (rally winner serves). */
+    val server: Side = Side.A,
 ) {
-    val pointDisplayA: String get() = if (isMatchOver && winner != null) pointsA.toString() else pointsA.toString()
-    val pointDisplayB: String get() = if (isMatchOver && winner != null) pointsB.toString() else pointsB.toString()
+    val pointDisplayA: String get() = pointsA.toString()
+    val pointDisplayB: String get() = pointsB.toString()
 }
 
 fun BadmintonMatchState.toDto(): MatchStateDto = MatchStateDto(
@@ -59,7 +62,7 @@ fun BadmintonMatchState.toDto(): MatchStateDto = MatchStateDto(
     advantageB = false,
     isTiebreak = false,
     setHistory = emptyList(),
-    server = Side.A.name,
+    server = server.name,
 )
 
 fun MatchStateDto.toBadmintonMatchState(): BadmintonMatchState = BadmintonMatchState(
@@ -70,4 +73,5 @@ fun MatchStateDto.toBadmintonMatchState(): BadmintonMatchState = BadmintonMatchS
     isMatchOver = isMatchOver,
     winner = winner?.let { runCatching { Side.valueOf(it) }.getOrNull() },
     matchActive = matchActive,
+    server = runCatching { Side.valueOf(server) }.getOrDefault(Side.A),
 )

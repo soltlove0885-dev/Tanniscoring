@@ -2,7 +2,7 @@ package com.tanniscoring.app
 
 import android.os.Bundle
 import android.view.WindowManager
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -24,7 +24,7 @@ import com.tanniscoring.app.ui.TournamentBracketScreen
 import com.tanniscoring.app.ui.TournamentSetupScreen
 import com.tanniscoring.shared.SportType
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private val viewModel: MatchViewModel by viewModels()
 

@@ -2,7 +2,7 @@ package com.tanniscoring.wear
 
 import android.os.Bundle
 import android.view.WindowManager
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.runtime.LaunchedEffect
@@ -12,7 +12,7 @@ import com.tanniscoring.shared.SportType
 import com.tanniscoring.wear.ui.TanniscoringWearTheme
 import com.tanniscoring.wear.ui.WearScoreScreen
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private val viewModel: WearMatchViewModel by viewModels()
 

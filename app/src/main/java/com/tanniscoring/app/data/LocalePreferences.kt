@@ -19,8 +19,7 @@ object LocalePreferences {
 
     fun applySaved(context: Context) {
         if (!hasChosenLanguage(context)) return
-        val tag = currentTag(context)
-        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag))
+        applyLocales(currentTag(context))
     }
 
     fun setLanguage(context: Context, tag: String) {
@@ -28,7 +27,11 @@ object LocalePreferences {
             .edit()
             .putString(KEY_LANG, tag)
             .putBoolean(KEY_CHOSEN, true)
-            .apply()
+            .commit()
+        applyLocales(tag)
+    }
+
+    private fun applyLocales(tag: String) {
         AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag))
     }
 }

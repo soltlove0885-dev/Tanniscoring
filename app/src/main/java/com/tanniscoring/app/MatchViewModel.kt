@@ -388,7 +388,7 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
         }
         if (sport == SportType.BADMINTON) {
             val state = dto.toBadmintonMatchState()
-            lastScoreFingerprint = "BM|${state.pointsA}-${state.pointsB}|${state.isMatchOver}"
+            lastScoreFingerprint = "BM|${state.pointsA}-${state.pointsB}|${state.isMatchOver}|${state.server}"
             _uiState.update {
                 val stayPicker = it.screen == PhoneScreen.LANGUAGE ||
                     it.screen == PhoneScreen.SPORT_PICKER

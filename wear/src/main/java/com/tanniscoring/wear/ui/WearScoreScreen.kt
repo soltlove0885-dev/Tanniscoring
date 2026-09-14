@@ -2,6 +2,7 @@ package com.tanniscoring.wear.ui
 
 import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -17,7 +18,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -400,7 +401,7 @@ private fun BadmintonScoreWear(
                 ScoreSquare(
                     label = match.playerA,
                     points = match.pointsA.toString(),
-                    isServing = false,
+                    isServing = match.server == Side.A && !match.isMatchOver,
                     accent = WearCourtColors.Accent,
                     onPoint = onPointA,
                     onUndo = onUndo,
@@ -408,11 +409,12 @@ private fun BadmintonScoreWear(
                         .weight(1f)
                         .fillMaxWidth(),
                     square = false,
+                    serveIconRes = R.drawable.ic_serve_shuttlecock,
                 )
                 ScoreSquare(
                     label = match.playerB,
                     points = match.pointsB.toString(),
-                    isServing = false,
+                    isServing = match.server == Side.B && !match.isMatchOver,
                     accent = WearCourtColors.SideB,
                     onPoint = onPointB,
                     onUndo = onUndo,
@@ -420,6 +422,7 @@ private fun BadmintonScoreWear(
                         .weight(1f)
                         .fillMaxWidth(),
                     square = false,
+                    serveIconRes = R.drawable.ic_serve_shuttlecock,
                 )
             }
             Text(
@@ -444,6 +447,7 @@ private fun ScoreSquare(
     onUndo: () -> Unit,
     modifier: Modifier = Modifier,
     square: Boolean = true,
+    serveIconRes: Int = R.drawable.ic_serve_tennis,
 ) {
     val shape = RoundedCornerShape(14.dp)
     Box(
@@ -466,25 +470,22 @@ private fun ScoreSquare(
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (isServing) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(WearCourtColors.Serve),
-                    )
-                    Spacer(Modifier.width(4.dp))
-                }
-                Text(
-                    text = label.take(8),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.caption2,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isServing) WearCourtColors.Serve else WearCourtColors.TextSecondary,
+            if (isServing) {
+                Image(
+                    painter = painterResource(serveIconRes),
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
                 )
+                Spacer(Modifier.height(2.dp))
             }
+            Text(
+                text = label.take(8),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.caption2,
+                fontWeight = FontWeight.Bold,
+                color = if (isServing) WearCourtColors.Serve else WearCourtColors.TextSecondary,
+            )
             Text(
                 text = points,
                 fontSize = if (square) 36.sp else 40.sp,

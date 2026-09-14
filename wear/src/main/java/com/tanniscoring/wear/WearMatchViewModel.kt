@@ -1,6 +1,8 @@
 package com.tanniscoring.wear
 
 import android.app.Application
+import android.content.res.Configuration
+import java.util.Locale
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.tanniscoring.shared.BadmintonMatchState
@@ -51,6 +53,8 @@ class WearMatchViewModel(application: Application) : AndroidViewModel(applicatio
             } else {
                 WearScreen.LANGUAGE
             },
+            draftPlayerA = application.getString(R.string.player_a),
+            draftPlayerB = application.getString(R.string.player_b),
         ),
     )
     val uiState: StateFlow<WearUiState> = _uiState.asStateFlow()
@@ -69,7 +73,20 @@ class WearMatchViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun chooseLanguage(tag: String) {
         LocalePreferences.setLanguage(getApplication(), tag)
-        _uiState.update { it.copy(screen = WearScreen.SPORT_PICKER) }
+        _uiState.update {
+            it.copy(
+                screen = WearScreen.SPORT_PICKER,
+                draftPlayerA = localizedString(tag, R.string.player_a),
+                draftPlayerB = localizedString(tag, R.string.player_b),
+            )
+        }
+    }
+
+    private fun localizedString(tag: String, resId: Int): String {
+        val app = getApplication<Application>()
+        val config = Configuration(app.resources.configuration)
+        config.setLocale(Locale.forLanguageTag(tag))
+        return app.createConfigurationContext(config).getString(resId)
     }
 
     fun showLanguagePicker() {
@@ -193,10 +210,10 @@ class WearMatchViewModel(application: Application) : AndroidViewModel(applicatio
     fun resetToStart() = exitToIdle()
 
     private fun defaultPlayerA(): String =
-        if (LocalePreferences.currentTag(getApplication()) == "ko") "선수 A" else "Player A"
+        localizedString(LocalePreferences.currentTag(getApplication()), R.string.player_a)
 
     private fun defaultPlayerB(): String =
-        if (LocalePreferences.currentTag(getApplication()) == "ko") "선수 B" else "Player B"
+        localizedString(LocalePreferences.currentTag(getApplication()), R.string.player_b)
 
     private fun restoreIfNeeded() {
         if (!LocalePreferences.hasChosenLanguage(getApplication())) return
@@ -398,8 +415,8 @@ data class WearUiState(
     val screen: WearScreen = WearScreen.LANGUAGE,
     val selectedSport: SportType? = null,
     val matchStarted: Boolean = false,
-    val draftPlayerA: String = "선수 A",
-    val draftPlayerB: String = "선수 B",
+    val draftPlayerA: String = "Player A",
+    val draftPlayerB: String = "Player B",
     val draftBestOf: Int = 3,
     val draftNoAd: Boolean = false,
     val matchState: MatchState? = null,

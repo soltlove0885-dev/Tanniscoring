@@ -102,4 +102,15 @@ class BadmintonScoringEngineTest {
         val s = engine.clearMatch()
         assertFalse(s.matchActive)
     }
+
+    @Test
+    fun `rally winner becomes server`() {
+        assertEquals(Side.A, engine.currentState().server)
+        engine.pointWon(Side.B)
+        assertEquals(Side.B, engine.currentState().server)
+        engine.pointWon(Side.A)
+        assertEquals(Side.A, engine.currentState().server)
+        engine.undo()
+        assertEquals(Side.B, engine.currentState().server)
+    }
 }

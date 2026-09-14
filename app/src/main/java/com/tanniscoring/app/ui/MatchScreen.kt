@@ -2,6 +2,7 @@ package com.tanniscoring.app.ui
 
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,7 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -196,24 +197,19 @@ private fun LandscapeSideColumn(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-        ) {
-            if (isServing) {
-                ServeDot(size = 10.dp)
-                Spacer(Modifier.width(6.dp))
-            }
-            Text(
-                text = name,
-                color = if (isServing) CourtColors.Serve else CourtColors.TextPrimary,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
-            )
+        if (isServing) {
+            ServeDot(size = 14.dp)
+            Spacer(Modifier.height(4.dp))
         }
+        Text(
+            text = name,
+            color = if (isServing) CourtColors.Serve else CourtColors.TextPrimary,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+        )
         Spacer(Modifier.height(8.dp))
         LandscapeScoreValue(sets.toString(), 36.sp)
         Spacer(Modifier.height(10.dp))
@@ -532,24 +528,19 @@ private fun PortraitScoreColumn(
             .padding(10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-        ) {
-            if (isServing) {
-                ServeDot(size = 8.dp)
-                Spacer(Modifier.width(4.dp))
-            }
-            Text(
-                text = name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = if (isServing) CourtColors.Serve else CourtColors.TextPrimary,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+        if (isServing) {
+            ServeDot(size = 12.dp)
+            Spacer(Modifier.height(4.dp))
         }
+        Text(
+            text = name,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = if (isServing) CourtColors.Serve else CourtColors.TextPrimary,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
         Spacer(Modifier.height(8.dp))
         ScoreCell(sets.toString(), 26.sp)
         Spacer(Modifier.height(6.dp))
@@ -590,11 +581,10 @@ private fun AxisChip(text: String) {
 
 @Composable
 private fun ServeDot(size: androidx.compose.ui.unit.Dp) {
-    Box(
-        modifier = Modifier
-            .size(size)
-            .clip(CircleShape)
-            .background(CourtColors.Serve),
+    Image(
+        painter = painterResource(R.drawable.ic_serve_tennis),
+        contentDescription = stringResource(R.string.cd_tennis_serve),
+        modifier = Modifier.size(size),
     )
 }
 

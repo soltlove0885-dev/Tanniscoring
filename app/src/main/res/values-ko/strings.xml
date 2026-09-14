@@ -97,4 +97,7 @@
     <string name="badminton_game_over">게임 종료</string>
     <string name="settings">설정</string>
 
+
+    <string name="cd_tennis_serve">테니스 서버</string>
+    <string name="cd_badminton_serve">배드민턴 서버</string>
 </resources>

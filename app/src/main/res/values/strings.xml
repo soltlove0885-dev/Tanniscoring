@@ -95,4 +95,7 @@
     <string name="badminton_rules_hint">Rally to 21, win by 2 · game ends at 30</string>
     <string name="badminton_game_over">Game over</string>
     <string name="settings">Settings</string>
+
+    <string name="cd_tennis_serve">Tennis server</string>
+    <string name="cd_badminton_serve">Badminton server</string>
 </resources>

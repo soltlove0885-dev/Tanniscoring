@@ -33,4 +33,7 @@
     <string name="change_language">Language</string>
     <string name="badminton_rules">21 · win by 2 · cap 30</string>
     <string name="badminton_game_over">Game over</string>
+
+    <string name="player_a">Player A</string>
+    <string name="player_b">Player B</string>
 </resources>

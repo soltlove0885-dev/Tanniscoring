@@ -7,6 +7,7 @@ package com.tanniscoring.shared
  * - First to [POINTS_TO_WIN] (21), must win by 2
  * - Continues past 20-20 until one leads by 2 OR reaches [POINT_CAP] (30)
  * - At 29-all, next point wins
+ * - Rally winner becomes the server
  */
 class BadmintonScoringEngine {
 
@@ -23,11 +24,13 @@ class BadmintonScoringEngine {
     private var matchOver: Boolean = false
     private var winner: Side? = null
     private var matchActive: Boolean = false
+    private var server: Side = Side.A
 
     private val history: ArrayDeque<Snapshot> = ArrayDeque()
 
     fun startMatch(
         names: PlayerNames = PlayerNames("Player A", "Player B"),
+        initialServer: Side = Side.A,
     ): BadmintonMatchState {
         playerA = names.playerA.ifBlank { "Player A" }
         playerB = names.playerB.ifBlank { "Player B" }
@@ -36,6 +39,7 @@ class BadmintonScoringEngine {
         matchOver = false
         winner = null
         matchActive = true
+        server = initialServer
         history.clear()
         return snapshot()
     }
@@ -44,6 +48,7 @@ class BadmintonScoringEngine {
         if (!matchActive || matchOver) return snapshot()
         pushHistory()
         if (side == Side.A) pointsA++ else pointsB++
+        server = side // rally winner serves next
         checkGameOver()
         return snapshot()
     }
@@ -80,6 +85,7 @@ class BadmintonScoringEngine {
         matchOver = state.isMatchOver
         winner = state.winner
         matchActive = state.matchActive
+        server = state.server
         history.clear()
         return snapshot()
     }
@@ -119,10 +125,13 @@ class BadmintonScoringEngine {
         val matchOver: Boolean,
         val winner: Side?,
         val matchActive: Boolean,
+        val server: Side,
     )
 
     private fun pushHistory() {
-        history.addLast(Snapshot(playerA, playerB, pointsA, pointsB, matchOver, winner, matchActive))
+        history.addLast(
+            Snapshot(playerA, playerB, pointsA, pointsB, matchOver, winner, matchActive, server),
+        )
     }
 
     private fun restore(s: Snapshot) {
@@ -133,6 +142,7 @@ class BadmintonScoringEngine {
         matchOver = s.matchOver
         winner = s.winner
         matchActive = s.matchActive
+        server = s.server
     }
 
     private fun snapshot(): BadmintonMatchState = BadmintonMatchState(
@@ -143,5 +153,6 @@ class BadmintonScoringEngine {
         isMatchOver = matchOver,
         winner = winner,
         matchActive = matchActive,
+        server = server,
     )
 }
