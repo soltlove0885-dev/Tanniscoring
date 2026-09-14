@@ -8,6 +8,7 @@ import androidx.activity.viewModels
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.tanniscoring.shared.SportType
 import com.tanniscoring.wear.ui.TanniscoringWearTheme
 import com.tanniscoring.wear.ui.WearScoreScreen
 
@@ -21,8 +22,10 @@ class MainActivity : ComponentActivity() {
             TanniscoringWearTheme {
                 val ui by viewModel.uiState.collectAsState()
                 val matchActive = ui.matchStarted &&
-                    ui.matchState != null &&
-                    ui.matchState?.isMatchOver != true
+                    (
+                        (ui.matchState != null && ui.matchState?.isMatchOver != true) ||
+                            (ui.badmintonState != null && ui.badmintonState?.isMatchOver != true)
+                        )
 
                 LaunchedEffect(matchActive) {
                     if (matchActive) {
@@ -42,6 +45,12 @@ class MainActivity : ComponentActivity() {
                     onNewMatch = { viewModel.resetToStart() },
                     onEndMatch = { viewModel.exitToIdle() },
                     onToggleNoAd = { viewModel.toggleDraftNoAd() },
+                    onChooseKorean = { viewModel.chooseLanguage("ko") },
+                    onChooseEnglish = { viewModel.chooseLanguage("en") },
+                    onSelectTennis = { viewModel.selectSport(SportType.TENNIS) },
+                    onSelectBadminton = { viewModel.selectSport(SportType.BADMINTON) },
+                    onShowSportPicker = { viewModel.showSportPicker() },
+                    onShowLanguage = { viewModel.showLanguagePicker() },
                 )
             }
         }

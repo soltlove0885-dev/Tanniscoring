@@ -12,12 +12,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import com.tanniscoring.app.ui.BadmintonIdleScreen
+import com.tanniscoring.app.ui.BadmintonMatchScreen
 import com.tanniscoring.app.ui.CourtColors
+import com.tanniscoring.app.ui.LanguagePickerScreen
 import com.tanniscoring.app.ui.MatchScreen
 import com.tanniscoring.app.ui.ScoreboardIdleScreen
+import com.tanniscoring.app.ui.SportPickerScreen
 import com.tanniscoring.app.ui.TanniscoringTheme
 import com.tanniscoring.app.ui.TournamentBracketScreen
 import com.tanniscoring.app.ui.TournamentSetupScreen
+import com.tanniscoring.shared.SportType
 
 class MainActivity : ComponentActivity() {
 
@@ -34,10 +39,15 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val ui by viewModel.uiState.collectAsState()
                     val matchActive = ui.matchStarted &&
-                        ui.matchState != null &&
-                        ui.matchState?.isMatchOver != true &&
-                        (ui.screen == PhoneScreen.MATCH_SCOREBOARD ||
-                            (ui.screen == PhoneScreen.IDLE && ui.matchStarted))
+                        (
+                            (ui.matchState != null && ui.matchState?.isMatchOver != true) ||
+                                (ui.badmintonState != null && ui.badmintonState?.isMatchOver != true)
+                            ) &&
+                        (
+                            ui.screen == PhoneScreen.MATCH_SCOREBOARD ||
+                                ui.screen == PhoneScreen.BADMINTON_SCOREBOARD ||
+                                (ui.screen == PhoneScreen.IDLE && ui.matchStarted)
+                            )
 
                     LaunchedEffect(matchActive) {
                         if (matchActive) {
@@ -48,6 +58,19 @@ class MainActivity : ComponentActivity() {
                     }
 
                     when {
+                        ui.screen == PhoneScreen.LANGUAGE -> {
+                            LanguagePickerScreen(
+                                onChooseKorean = { viewModel.chooseLanguage("ko") },
+                                onChooseEnglish = { viewModel.chooseLanguage("en") },
+                            )
+                        }
+                        ui.screen == PhoneScreen.SPORT_PICKER -> {
+                            SportPickerScreen(
+                                onTennis = { viewModel.selectSport(SportType.TENNIS) },
+                                onBadminton = { viewModel.selectSport(SportType.BADMINTON) },
+                                onChangeLanguage = { viewModel.showLanguagePicker() },
+                            )
+                        }
                         ui.screen == PhoneScreen.TOURNAMENT_SETUP -> {
                             TournamentSetupScreen(
                                 playerCount = ui.draftPlayerCount,
@@ -73,6 +96,19 @@ class MainActivity : ComponentActivity() {
                                 onBack = { viewModel.showIdle() },
                             )
                         }
+                        ui.screen == PhoneScreen.BADMINTON_SCOREBOARD &&
+                            ui.matchStarted && ui.badmintonState != null -> {
+                            BadmintonMatchScreen(
+                                state = ui,
+                                onPointA = { viewModel.pointWonA() },
+                                onPointB = { viewModel.pointWonB() },
+                                onUndo = { viewModel.undo() },
+                                onEndMatch = { viewModel.endMatch() },
+                                onNewMatch = { viewModel.resetToStart() },
+                                onRequestState = { viewModel.requestWearState() },
+                                onBackToSports = { viewModel.showSportPicker() },
+                            )
+                        }
                         (ui.screen == PhoneScreen.MATCH_SCOREBOARD || ui.screen == PhoneScreen.IDLE) &&
                             ui.matchStarted && ui.matchState != null -> {
                             MatchScreen(
@@ -91,6 +127,17 @@ class MainActivity : ComponentActivity() {
                                 },
                             )
                         }
+                        ui.screen == PhoneScreen.BADMINTON_IDLE -> {
+                            BadmintonIdleScreen(
+                                wearConnected = ui.wearConnected,
+                                wearNodeCount = ui.wearNodeCount,
+                                onRequestState = { viewModel.requestWearState() },
+                                onOpenWearApp = { viewModel.openWearApp(this@MainActivity) },
+                                onInstallWearApp = { viewModel.openWearCompanionStore(this@MainActivity) },
+                                onBackToSports = { viewModel.showSportPicker() },
+                                onChangeLanguage = { viewModel.showLanguagePicker() },
+                            )
+                        }
                         else -> {
                             ScoreboardIdleScreen(
                                 history = ui.history,
@@ -102,6 +149,8 @@ class MainActivity : ComponentActivity() {
                                 onInstallWearApp = { viewModel.openWearCompanionStore(this@MainActivity) },
                                 onTournament = { viewModel.openTournamentSetup() },
                                 onResumeTournament = { viewModel.showBracket() },
+                                onBackToSports = { viewModel.showSportPicker() },
+                                onChangeLanguage = { viewModel.showLanguagePicker() },
                             )
                         }
                     }

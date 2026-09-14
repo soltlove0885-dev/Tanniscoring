@@ -141,6 +141,7 @@ object SyncTypes {
  * Flat DTO for MatchState over the wire (JSON-friendly).
  */
 data class MatchStateDto(
+    val sport: String = SportType.TENNIS.name,
     val playerA: String = "",
     val playerB: String = "",
     val bestOf: Int = 3,
@@ -182,6 +183,7 @@ data class ScoringEventDto(
     val mode: String? = null,
     val server: String? = null,
     val noAd: Boolean? = null,
+    val sport: String? = null,
     val sequence: Long = 0L,
 )
 
@@ -202,6 +204,7 @@ data class MatchHistoryEntry(
 )
 
 fun MatchState.toDto(): MatchStateDto = MatchStateDto(
+    sport = SportType.TENNIS.name,
     playerA = playerA,
     playerB = playerB,
     bestOf = format.bestOf,

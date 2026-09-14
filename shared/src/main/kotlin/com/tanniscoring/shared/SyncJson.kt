@@ -16,6 +16,7 @@ object SyncJson {
         event.mode?.let { append(",\"mode\":\"").append(escape(it)).append('"') }
         event.server?.let { append(",\"server\":\"").append(escape(it)).append('"') }
         event.noAd?.let { append(",\"noAd\":").append(it) }
+        event.sport?.let { append(",\"sport\":\"").append(escape(it)).append('"') }
         append(",\"sequence\":").append(event.sequence)
         append('}')
     }
@@ -31,13 +32,15 @@ object SyncJson {
             mode = map["mode"],
             server = map["server"],
             noAd = map["noAd"]?.let { it == "true" },
+            sport = map["sport"],
             sequence = map["sequence"]?.toLongOrNull() ?: 0L,
         )
     }
 
     fun encodeState(dto: MatchStateDto): String = buildString {
         append('{')
-        append("\"playerA\":\"").append(escape(dto.playerA)).append('"')
+        append("\"sport\":\"").append(escape(dto.sport)).append('"')
+        append(",\"playerA\":\"").append(escape(dto.playerA)).append('"')
         append(",\"playerB\":\"").append(escape(dto.playerB)).append('"')
         append(",\"bestOf\":").append(dto.bestOf)
         append(",\"mode\":\"").append(escape(dto.mode)).append('"')
@@ -72,6 +75,7 @@ object SyncJson {
         val map = parseObject(json)
         val history = parseSetHistory(json)
         return MatchStateDto(
+            sport = map["sport"] ?: SportType.TENNIS.name,
             playerA = map["playerA"] ?: "",
             playerB = map["playerB"] ?: "",
             bestOf = map["bestOf"]?.toIntOrNull() ?: 3,

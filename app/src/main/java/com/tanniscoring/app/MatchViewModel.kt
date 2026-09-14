@@ -7,7 +7,11 @@ import androidx.lifecycle.viewModelScope
 import com.tanniscoring.app.data.MatchRepository
 import com.tanniscoring.app.data.TournamentRepository
 import com.tanniscoring.app.sync.WearSyncManager
+import com.tanniscoring.shared.BadmintonMatchState
 import com.tanniscoring.shared.BracketMatch
+import com.tanniscoring.shared.SportType
+import com.tanniscoring.shared.toBadmintonMatchState
+import com.tanniscoring.app.data.LocalePreferences
 import com.tanniscoring.shared.BracketMatchStatus
 import com.tanniscoring.shared.MatchHistoryEntry
 import com.tanniscoring.shared.MatchMode
@@ -42,7 +46,11 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
         MatchUiState(
             history = repo.loadHistory(),
             tournament = tournamentRepo.load(),
-            screen = PhoneScreen.IDLE,
+            screen = if (LocalePreferences.hasChosenLanguage(application)) {
+                PhoneScreen.SPORT_PICKER
+            } else {
+                PhoneScreen.LANGUAGE
+            },
         ),
     )
     val uiState: StateFlow<MatchUiState> = _uiState.asStateFlow()
@@ -58,8 +66,17 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         val existingTournament = tournamentRepo.load()
-        if (existingTournament != null && !existingTournament.isComplete) {
-            _uiState.update { it.copy(tournament = existingTournament, screen = PhoneScreen.TOURNAMENT_BRACKET) }
+        if (LocalePreferences.hasChosenLanguage(application) &&
+            existingTournament != null &&
+            !existingTournament.isComplete
+        ) {
+            _uiState.update {
+                it.copy(
+                    tournament = existingTournament,
+                    selectedSport = SportType.TENNIS,
+                    screen = PhoneScreen.TOURNAMENT_BRACKET,
+                )
+            }
         }
         viewModelScope.launch {
             sync.incomingState.collect { dto ->
@@ -105,21 +122,66 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
         }
         repo.saveCurrentMatch(null)
         val tournament = _uiState.value.tournament
+        val sport = _uiState.value.selectedSport
         lastScoreFingerprint = null
         _uiState.update {
             it.copy(
                 matchStarted = false,
                 matchState = null,
+                badmintonState = null,
                 canUndo = false,
                 scoringFromWear = false,
                 history = repo.loadHistory(),
-                screen = if (tournament != null) PhoneScreen.TOURNAMENT_BRACKET else PhoneScreen.IDLE,
+                screen = when {
+                    tournament != null -> PhoneScreen.TOURNAMENT_BRACKET
+                    sport == SportType.BADMINTON -> PhoneScreen.BADMINTON_IDLE
+                    else -> PhoneScreen.IDLE
+                },
             )
         }
     }
 
     fun requestWearState() {
         viewModelScope.launch { sync.requestState() }
+    }
+
+    fun chooseLanguage(tag: String) {
+        LocalePreferences.setLanguage(getApplication(), tag)
+        _uiState.update { it.copy(screen = PhoneScreen.SPORT_PICKER) }
+    }
+
+    fun showLanguagePicker() {
+        _uiState.update { it.copy(screen = PhoneScreen.LANGUAGE) }
+    }
+
+    fun selectSport(sport: SportType) {
+        _uiState.update {
+            it.copy(
+                selectedSport = sport,
+                screen = when (sport) {
+                    SportType.TENNIS -> PhoneScreen.IDLE
+                    SportType.BADMINTON -> PhoneScreen.BADMINTON_IDLE
+                },
+                // Clear opposite sport live state when switching
+                matchState = if (sport == SportType.TENNIS) it.matchState else null,
+                badmintonState = if (sport == SportType.BADMINTON) it.badmintonState else null,
+                matchStarted = false,
+            )
+        }
+    }
+
+    fun showSportPicker() {
+        _uiState.update {
+            it.copy(
+                screen = PhoneScreen.SPORT_PICKER,
+                selectedSport = null,
+                matchStarted = false,
+                matchState = null,
+                badmintonState = null,
+                scoringFromWear = false,
+            )
+        }
+        repo.saveCurrentMatch(null)
     }
 
     fun openWearApp(context: Context) {
@@ -139,6 +201,7 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.update {
             it.copy(
                 tournament = null,
+                selectedSport = SportType.TENNIS,
                 screen = PhoneScreen.TOURNAMENT_SETUP,
                 draftPlayerCount = 4,
                 draftBestOf = 3,
@@ -283,6 +346,7 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
                 bestOf = match.bestOf,
                 mode = MatchMode.SINGLES.name,
                 noAd = tournament.defaultNoAd,
+                sport = SportType.TENNIS.name,
                 sequence = nextSeq(),
             ),
         )
@@ -294,23 +358,50 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun applyRemoteState(dto: MatchStateDto) {
+        val sport = SportType.fromName(dto.sport)
         if (!dto.matchActive) {
             _uiState.update {
                 val screen = when {
+                    it.screen == PhoneScreen.LANGUAGE -> PhoneScreen.LANGUAGE
+                    it.screen == PhoneScreen.SPORT_PICKER -> PhoneScreen.SPORT_PICKER
                     it.screen == PhoneScreen.TOURNAMENT_SETUP -> PhoneScreen.TOURNAMENT_SETUP
                     it.tournament != null -> PhoneScreen.TOURNAMENT_BRACKET
+                    it.selectedSport == SportType.BADMINTON ||
+                        it.screen == PhoneScreen.BADMINTON_SCOREBOARD ||
+                        it.screen == PhoneScreen.BADMINTON_IDLE -> PhoneScreen.BADMINTON_IDLE
                     else -> PhoneScreen.IDLE
                 }
+                val onScoreboard = it.screen == PhoneScreen.MATCH_SCOREBOARD ||
+                    it.screen == PhoneScreen.BADMINTON_SCOREBOARD
                 it.copy(
                     matchStarted = false,
                     matchState = null,
+                    badmintonState = null,
                     canUndo = false,
                     scoringFromWear = false,
-                    screen = if (it.screen == PhoneScreen.MATCH_SCOREBOARD) screen else it.screen,
+                    screen = if (onScoreboard) screen else it.screen,
                 )
             }
             repo.saveCurrentMatch(null)
             lastScoreFingerprint = null
+            return
+        }
+        if (sport == SportType.BADMINTON) {
+            val state = dto.toBadmintonMatchState()
+            lastScoreFingerprint = "BM|${state.pointsA}-${state.pointsB}|${state.isMatchOver}"
+            _uiState.update {
+                val stayPicker = it.screen == PhoneScreen.LANGUAGE ||
+                    it.screen == PhoneScreen.SPORT_PICKER
+                it.copy(
+                    matchStarted = true,
+                    selectedSport = SportType.BADMINTON,
+                    badmintonState = state,
+                    matchState = null,
+                    canUndo = !state.isMatchOver,
+                    scoringFromWear = true,
+                    screen = if (stayPicker) it.screen else PhoneScreen.BADMINTON_SCOREBOARD,
+                )
+            }
             return
         }
         val state = dto.toMatchState()
@@ -318,12 +409,20 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.update {
             val stayOnBracket = it.screen == PhoneScreen.TOURNAMENT_BRACKET ||
                 it.screen == PhoneScreen.TOURNAMENT_SETUP
+            val stayPicker = it.screen == PhoneScreen.LANGUAGE ||
+                it.screen == PhoneScreen.SPORT_PICKER
             it.copy(
                 matchStarted = true,
+                selectedSport = SportType.TENNIS,
                 matchState = state,
+                badmintonState = null,
                 canUndo = !state.isMatchOver,
                 scoringFromWear = true,
-                screen = if (stayOnBracket) it.screen else PhoneScreen.MATCH_SCOREBOARD,
+                screen = when {
+                    stayPicker -> it.screen
+                    stayOnBracket -> it.screen
+                    else -> PhoneScreen.MATCH_SCOREBOARD
+                },
             )
         }
         repo.saveCurrentMatch(state)
@@ -407,7 +506,11 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
 }
 
 enum class PhoneScreen {
+    LANGUAGE,
+    SPORT_PICKER,
     IDLE,
+    BADMINTON_IDLE,
+    BADMINTON_SCOREBOARD,
     TOURNAMENT_SETUP,
     TOURNAMENT_BRACKET,
     MATCH_SCOREBOARD,
@@ -416,6 +519,8 @@ enum class PhoneScreen {
 data class MatchUiState(
     val matchStarted: Boolean = false,
     val matchState: MatchState? = null,
+    val badmintonState: BadmintonMatchState? = null,
+    val selectedSport: SportType? = null,
     val canUndo: Boolean = false,
     /** True when ≥1 Wear OS Data Layer node is connected — NOT that wear app is installed. */
     val wearConnected: Boolean = false,
@@ -423,7 +528,7 @@ data class MatchUiState(
     /** True after receiving live state from Wear (scoreboard mode). */
     val scoringFromWear: Boolean = false,
     val history: List<MatchHistoryEntry> = emptyList(),
-    val screen: PhoneScreen = PhoneScreen.IDLE,
+    val screen: PhoneScreen = PhoneScreen.SPORT_PICKER,
     val tournament: Tournament? = null,
     val draftPlayerCount: Int = 4,
     val draftBestOf: Int = 3,

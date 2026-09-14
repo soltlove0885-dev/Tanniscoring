@@ -1,25 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">테니스</string>
+    <string name="app_name">Tanniscoring</string>
     <string name="point_a">A</string>
     <string name="point_b">B</string>
-    <string name="undo">되돌리기</string>
-    <string name="toggle_server">서브</string>
-    <string name="start_match">경기 시작</string>
-    <string name="start_defaults">선수 A / 선수 B · 3판 2선승</string>
-    <string name="long_press_undo">길게 눌러 되돌리기</string>
-    <string name="long_press_hint">점수 길게 = 되돌리기 · 제목 길게 = 종료</string>
-    <string name="new_match">새 경기</string>
-    <string name="end_match">경기 종료</string>
-    <string name="end_match_confirm">경기를 종료할까요?</string>
-    <string name="cancel">취소</string>
-    <string name="deuce">듀스</string>
+    <string name="undo">Undo</string>
+    <string name="toggle_server">Serve</string>
+    <string name="start_match">Start</string>
+    <string name="start_defaults">Player A / B · Best of 3</string>
+    <string name="long_press_undo">Long-press to undo</string>
+    <string name="long_press_hint">Hold score = undo · Hold title = end</string>
+    <string name="new_match">New match</string>
+    <string name="end_match">End</string>
+    <string name="end_match_confirm">End this match?</string>
+    <string name="cancel">Cancel</string>
+    <string name="deuce">Deuce</string>
     <string name="advantage_short">AD</string>
     <string name="tiebreak">TB</string>
-    <string name="tiebreak_full">타이브레이크</string>
-    <string name="match_over">종료</string>
-    <string name="server_short">서브 %1$s</string>
-    <string name="no_ad_short">노애드</string>
-    <string name="no_ad_on">노애드 ON</string>
-    <string name="no_ad_off">노애드 OFF</string>
+    <string name="tiebreak_full">Tiebreak</string>
+    <string name="match_over">Over</string>
+    <string name="server_short">Serve %1$s</string>
+    <string name="no_ad_short">No-Ad</string>
+    <string name="no_ad_on">No-Ad ON</string>
+    <string name="no_ad_off">No-Ad OFF</string>
+
+    <string name="choose_language">Language</string>
+    <string name="language_korean">한국어</string>
+    <string name="language_english">English</string>
+    <string name="choose_sport">Sport</string>
+    <string name="sport_tennis">Tennis</string>
+    <string name="sport_badminton">Badminton</string>
+    <string name="back_to_sports">Sports</string>
+    <string name="change_language">Language</string>
+    <string name="badminton_rules">21 · win by 2 · cap 30</string>
+    <string name="badminton_game_over">Game over</string>
 </resources>

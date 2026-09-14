@@ -43,6 +43,8 @@ fun ScoreboardIdleScreen(
     onInstallWearApp: () -> Unit,
     onTournament: () -> Unit = {},
     onResumeTournament: () -> Unit = {},
+    onBackToSports: () -> Unit = {},
+    onChangeLanguage: () -> Unit = {},
 ) {
     Scaffold(
         containerColor = CourtColors.Black,
@@ -133,6 +135,18 @@ fun ScoreboardIdleScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
+            OutlinedButton(
+                onClick = onBackToSports,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.back_to_sports))
+            }
+            OutlinedButton(
+                onClick = onChangeLanguage,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.change_language))
+            }
 
             if (history.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
