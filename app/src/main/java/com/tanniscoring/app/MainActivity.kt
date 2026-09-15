@@ -18,7 +18,9 @@ import com.tanniscoring.app.ui.CourtColors
 import com.tanniscoring.app.ui.LanguagePickerScreen
 import com.tanniscoring.app.ui.MatchScreen
 import com.tanniscoring.app.ui.ScoreboardIdleScreen
+import com.tanniscoring.app.ui.SettingsScreen
 import com.tanniscoring.app.ui.SportPickerScreen
+import com.tanniscoring.app.ui.TermsOfUseScreen
 import com.tanniscoring.app.ui.TanniscoringTheme
 import com.tanniscoring.app.ui.TournamentBracketScreen
 import com.tanniscoring.app.ui.TournamentSetupScreen
@@ -64,11 +66,25 @@ class MainActivity : AppCompatActivity() {
                                 onChooseEnglish = { viewModel.chooseLanguage("en") },
                             )
                         }
+                        ui.screen == PhoneScreen.SETTINGS -> {
+                            SettingsScreen(
+                                versionName = "1.5.3",
+                                onTermsOfUse = { viewModel.showTermsOfUse() },
+                                onChangeLanguage = { viewModel.showLanguagePicker() },
+                                onBack = { viewModel.closeSettings() },
+                            )
+                        }
+                        ui.screen == PhoneScreen.TERMS -> {
+                            TermsOfUseScreen(
+                                onBack = { viewModel.closeTermsOfUse() },
+                            )
+                        }
                         ui.screen == PhoneScreen.SPORT_PICKER -> {
                             SportPickerScreen(
                                 onTennis = { viewModel.selectSport(SportType.TENNIS) },
                                 onBadminton = { viewModel.selectSport(SportType.BADMINTON) },
                                 onChangeLanguage = { viewModel.showLanguagePicker() },
+                                onSettings = { viewModel.showSettings() },
                             )
                         }
                         ui.screen == PhoneScreen.TOURNAMENT_SETUP -> {
@@ -136,6 +152,7 @@ class MainActivity : AppCompatActivity() {
                                 onInstallWearApp = { viewModel.openWearCompanionStore(this@MainActivity) },
                                 onBackToSports = { viewModel.showSportPicker() },
                                 onChangeLanguage = { viewModel.showLanguagePicker() },
+                                onSettings = { viewModel.showSettings() },
                             )
                         }
                         else -> {
@@ -151,6 +168,7 @@ class MainActivity : AppCompatActivity() {
                                 onResumeTournament = { viewModel.showBracket() },
                                 onBackToSports = { viewModel.showSportPicker() },
                                 onChangeLanguage = { viewModel.showLanguagePicker() },
+                                onSettings = { viewModel.showSettings() },
                             )
                         }
                     }

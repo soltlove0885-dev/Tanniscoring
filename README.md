@@ -1,4 +1,4 @@
-# Tanniscoring (테니스코어링) 1.5.2
+# Tanniscoring (테니스코어링) 1.5.3
 
 Android phone + Wear OS multi-sport score app (Tennis + Badminton), bilingual KO/EN.
 
@@ -6,7 +6,7 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 
 | | |
 |---|---|
-| Version | **1.5.2** (versionCode phone **31** / wear **32**) |
+| Version | **1.5.3** (versionCode phone **33** / wear **34**) |
 | applicationId (phone **and** wear) | `com.tanniscoring.app` |
 | minSdk | Phone 26 / Wear 30 |
 | UI | Jetpack Compose + Wear Compose (Korean / English) |
@@ -27,7 +27,7 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 - Real-time sync via **MessageClient** + **WearableListenerService**
 - Same `applicationId` on phone + wear; phone embeds wear with `wearApp(project(":wear"))`
 
-### 1.5.2
+### 1.5.3
 
 - Fix clipped KO/EN text on phone + Wear (auto-size labels, tighter padding, scroll on pickers / round watch)
 - Phone scoring always available when a match is live: tap A/B = point, long-press = undo (portrait + landscape), synced to Wear without disabling controls when watch is connected
@@ -85,7 +85,7 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 
 Packaged AABs:
 
-- `tanniscoring-app-vc31-1.5.2.aab`
-- `tanniscoring-wear-vc32-1.5.2.aab`
+- `tanniscoring-app-vc31-1.5.3.aab`
+- `tanniscoring-wear-vc32-1.5.3.aab`
 
 Packaged for `soltlove0885-dev/Tanniscoring`.

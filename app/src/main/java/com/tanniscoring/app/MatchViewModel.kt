@@ -154,6 +154,35 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.update { it.copy(screen = PhoneScreen.LANGUAGE) }
     }
 
+    fun showSettings() {
+        _uiState.update {
+            it.copy(
+                settingsReturnScreen = when (it.screen) {
+                    PhoneScreen.SETTINGS, PhoneScreen.TERMS -> it.settingsReturnScreen
+                    else -> it.screen
+                },
+                screen = PhoneScreen.SETTINGS,
+            )
+        }
+    }
+
+    fun showTermsOfUse() {
+        _uiState.update { it.copy(screen = PhoneScreen.TERMS) }
+    }
+
+    fun closeTermsOfUse() {
+        _uiState.update { it.copy(screen = PhoneScreen.SETTINGS) }
+    }
+
+    fun closeSettings() {
+        _uiState.update {
+            it.copy(
+                screen = it.settingsReturnScreen ?: PhoneScreen.SPORT_PICKER,
+                settingsReturnScreen = null,
+            )
+        }
+    }
+
     fun selectSport(sport: SportType) {
         _uiState.update {
             it.copy(
@@ -364,6 +393,8 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
                 val screen = when {
                     it.screen == PhoneScreen.LANGUAGE -> PhoneScreen.LANGUAGE
                     it.screen == PhoneScreen.SPORT_PICKER -> PhoneScreen.SPORT_PICKER
+                    it.screen == PhoneScreen.SETTINGS -> PhoneScreen.SETTINGS
+                    it.screen == PhoneScreen.TERMS -> PhoneScreen.TERMS
                     it.screen == PhoneScreen.TOURNAMENT_SETUP -> PhoneScreen.TOURNAMENT_SETUP
                     it.tournament != null -> PhoneScreen.TOURNAMENT_BRACKET
                     it.selectedSport == SportType.BADMINTON ||
@@ -391,7 +422,9 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
             lastScoreFingerprint = "BM|${state.pointsA}-${state.pointsB}|${state.isMatchOver}|${state.server}"
             _uiState.update {
                 val stayPicker = it.screen == PhoneScreen.LANGUAGE ||
-                    it.screen == PhoneScreen.SPORT_PICKER
+                    it.screen == PhoneScreen.SPORT_PICKER ||
+                    it.screen == PhoneScreen.SETTINGS ||
+                    it.screen == PhoneScreen.TERMS
                 it.copy(
                     matchStarted = true,
                     selectedSport = SportType.BADMINTON,
@@ -410,7 +443,9 @@ class MatchViewModel(application: Application) : AndroidViewModel(application) {
             val stayOnBracket = it.screen == PhoneScreen.TOURNAMENT_BRACKET ||
                 it.screen == PhoneScreen.TOURNAMENT_SETUP
             val stayPicker = it.screen == PhoneScreen.LANGUAGE ||
-                it.screen == PhoneScreen.SPORT_PICKER
+                it.screen == PhoneScreen.SPORT_PICKER ||
+                it.screen == PhoneScreen.SETTINGS ||
+                it.screen == PhoneScreen.TERMS
             it.copy(
                 matchStarted = true,
                 selectedSport = SportType.TENNIS,
@@ -514,6 +549,8 @@ enum class PhoneScreen {
     TOURNAMENT_SETUP,
     TOURNAMENT_BRACKET,
     MATCH_SCOREBOARD,
+    SETTINGS,
+    TERMS,
 }
 
 data class MatchUiState(
@@ -534,4 +571,6 @@ data class MatchUiState(
     val draftBestOf: Int = 3,
     val draftNoAd: Boolean = false,
     val draftPlayerNames: List<String> = List(8) { "" },
+    /** Screen to restore when leaving Settings (not used for Terms → Settings). */
+    val settingsReturnScreen: PhoneScreen? = null,
 )

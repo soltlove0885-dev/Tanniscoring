@@ -35,6 +35,7 @@ fun BadmintonIdleScreen(
     onInstallWearApp: () -> Unit,
     onBackToSports: () -> Unit,
     onChangeLanguage: () -> Unit,
+    onSettings: () -> Unit = {},
 ) {
     Scaffold(
         containerColor = CourtColors.Black,
@@ -106,6 +107,9 @@ fun BadmintonIdleScreen(
             }
             OutlinedButton(onClick = onChangeLanguage, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.change_language))
+            }
+            OutlinedButton(onClick = onSettings, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.settings))
             }
             Spacer(Modifier.height(24.dp))
         }

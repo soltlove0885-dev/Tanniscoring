@@ -45,6 +45,7 @@ fun ScoreboardIdleScreen(
     onResumeTournament: () -> Unit = {},
     onBackToSports: () -> Unit = {},
     onChangeLanguage: () -> Unit = {},
+    onSettings: () -> Unit = {},
 ) {
     Scaffold(
         containerColor = CourtColors.Black,
@@ -146,6 +147,12 @@ fun ScoreboardIdleScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.change_language))
+            }
+            OutlinedButton(
+                onClick = onSettings,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.settings))
             }
 
             if (history.isNotEmpty()) {
