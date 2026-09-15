@@ -1,4 +1,4 @@
-# SCORECORE (스코어코어) 1.5.4 — package com.tanniscoring.app
+# SCORECORE (스코어코어) 1.5.5 — package com.tanniscoring.app
 
 Android phone + Wear OS multi-sport score app (Tennis + Badminton), bilingual KO/EN.
 
@@ -6,7 +6,7 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 
 | | |
 |---|---|
-| Version | **1.5.4** (versionCode phone **35** / wear **36**) |
+| Version | **1.5.5** (versionCode phone **37** / wear **38**) |
 | applicationId (phone **and** wear) | `com.tanniscoring.app` |
 | minSdk | Phone 26 / Wear 30 |
 | UI | Jetpack Compose + Wear Compose (Korean / English) |
@@ -26,6 +26,11 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 - **Reconnect**: refresh / re-request Wear state
 - Real-time sync via **MessageClient** + **WearableListenerService**
 - Same `applicationId` on phone + wear; phone embeds wear with `wearApp(project(":wear"))`
+
+### 1.5.5
+
+- Premium SCORECORE launcher icon from user mock (neon crossed rackets) — phone + Wear adaptive foreground PNGs
+- Play assets: `icon-neon-preview.png` (1024) + `hi-res-icon-neon.png` (512)
 
 ### 1.5.4
 
@@ -85,7 +90,7 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 
 Packaged AABs:
 
-- `tanniscoring-app-vc35-1.5.4.aab`
-- `tanniscoring-wear-vc36-1.5.4.aab`
+- `tanniscoring-app-vc35-1.5.5.aab`
+- `tanniscoring-wear-vc36-1.5.5.aab`
 
 Packaged for `soltlove0885-dev/Tanniscoring`.
