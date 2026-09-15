@@ -1,4 +1,4 @@
-# Play Console upload checklist — SCORECORE 1.5.4 (KO)
+# Play Console upload checklist — SCORECORE 1.5.5 (KO + EN)
 
 Base: `/workspace/Tanniscoring/docs/store-screenshots/v153/play-ready/`
 
@@ -28,22 +28,48 @@ Source file: `/workspace/Tanniscoring/docs/store-screenshots/v153/play-ready/lis
 
 ### Short description
 ```
-글러브 끼고도 되는 스코어 워치 — 탭=득점·길게=취소, 폰 전광판 동기화
+워치·폰 어디서든 채점 — 탭=득점·길게=취소
 ```
 
 ### Full description
 ```
 스코어코어(SCORECORE)는 Galaxy Watch 등 Wear OS와 폰을 위한 테니스·배드민턴 스코어 앱입니다.
 
-• 글러브 끼고도 되는 채점: 워치에서 탭=득점, 길게 누르기=취소  
-• 폰은 실시간 전광판, 워치는 채점 권한 — MessageClient로 동기화  
-• 테니스(노애드 포함) + 배드민턴(21점 랠리) 한 앱  
-• 첫 실행부터 한국어 / English  
-• 4명·8명 단판 토너먼트 브라켓(폰)
+• 워치에서 탭=득점, 길게 누르기=취소
+• 폰만으로도 경기 시작·채점 가능 (워치 선택)
+• 워치 연동 시 폰은 실시간 전광판으로 동기화
+• 테니스(노애드 포함) + 배드민턴 한 앱
+• 첫 실행 한국어 / English
+• 4·8명 단판 토너먼트(폰)
 
 광고 SDK·분석 SDK 없음. 문의: soltlove0885@gmail.com
 
-버전 1.5.3 (phone vc33 / wear vc34)
+버전 1.5.5 (phone vc37 / wear vc40)
+```
+
+## Store listing text (English — global)
+
+Source file: `/workspace/Tanniscoring/docs/store-screenshots/v153/play-ready/listing-en.txt`
+
+### Short description
+```
+Score on watch or phone — tap=point, long-press=undo
+```
+
+### Full description
+```
+SCORECORE is a tennis & badminton scoring app for Wear OS (Galaxy Watch and more) and phone.
+
+• Score on the watch or phone: tap = point, long-press = undo
+• Phone can start and score matches alone — watch is optional
+• Optional watch sync; phone doubles as live scoreboard when paired
+• Tennis (including No-Ad) + badminton (rally to 21) in one app
+• Korean / English from first launch
+• 4- and 8-player single-elim tournament brackets (phone)
+
+No ads SDK, no analytics SDK. Contact: soltlove0885@gmail.com
+
+Version 1.5.5 (phone vc37 / wear vc40)
 ```
 
 ## Notes for computer agent
@@ -51,3 +77,4 @@ Source file: `/workspace/Tanniscoring/docs/store-screenshots/v153/play-ready/lis
 - Do not open a browser from this checklist alone; upload only when instructed.
 - Phone screenshots: upload in numeric order (01 → 04).
 - Ignore `.venv/` in this folder (local Pillow tooling only).
+- Positioning memory: **no glove / glove-friendly claims** — screen tap is not glove-friendly without capacitive gloves or hardware buttons. Score on **watch or phone**; phone-only mode supported; watch optional.
