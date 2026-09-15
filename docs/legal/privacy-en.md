@@ -1,4 +1,4 @@
-# Privacy Policy — Tanniscoring
+# Privacy Policy — SCORECORE
 
 **Last updated:** 2026-09-15  
 **Contact:** soltlove0885@gmail.com  
@@ -8,7 +8,7 @@
 
 ## 1. Overview
 
-This Privacy Policy explains what information Tanniscoring (the “App”) handles, how it is stored and synced, and what choices you have. By installing or using the App, you acknowledge this Policy.
+This Privacy Policy explains what information SCORECORE (the “App”) handles, how it is stored and synced, and what choices you have. By installing or using the App, you acknowledge this Policy.
 
 ## 2. Information we handle
 

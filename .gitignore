@@ -24,3 +24,7 @@ out/
 .kotlin/
 keystore.properties
 *.jks
+
+# Local tooling
+**/.venv/
+docs/store-screenshots/v153/play-ready/.venv/

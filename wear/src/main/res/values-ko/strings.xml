@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">테니스</string>
+    <string name="app_name">스코어코어</string>
     <string name="point_a">A</string>
     <string name="point_b">B</string>
     <string name="undo">되돌리기</string>

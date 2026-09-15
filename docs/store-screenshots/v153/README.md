@@ -1,4 +1,4 @@
-# Play Store screenshots — Tanniscoring 1.5.3
+# Play Store screenshots — SCORECORE 1.5.4
 
 Phone intro screenshots (portrait **1080×1920**). Inner frames mimic the **real Compose OLED UI** (`CourtColors` / `WearCourtColors`: true black, soft court green `#64B574`, serve gold `#E0B84A`) with Korean chrome from `values-ko`.
 
@@ -26,7 +26,7 @@ Also:
 
 ### Full description
 
-테니스코어링(Tanniscoring)은 Galaxy Watch 등 Wear OS와 폰을 위한 테니스·배드민턴 스코어 앱입니다.
+스코어코어(SCORECORE)는 Galaxy Watch 등 Wear OS와 폰을 위한 테니스·배드민턴 스코어 앱입니다.
 
 • 글러브 끼고도 되는 채점: 워치에서 탭=득점, 길게 누르기=취소  
 • 폰은 실시간 전광판, 워치는 채점 권한 — MessageClient로 동기화  
@@ -36,7 +36,7 @@ Also:
 
 광고 SDK·분석 SDK 없음. 문의: soltlove0885@gmail.com
 
-버전 1.5.3 (phone vc33 / wear vc34)
+버전 1.5.4 (phone vc35 / wear vc36)
 
 ## Notes
 

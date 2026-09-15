@@ -1,4 +1,4 @@
-# Terms of Use — Tanniscoring
+# Terms of Use — SCORECORE
 
 **Last updated:** 2026-09-15  
 **Contact:** soltlove0885@gmail.com  
@@ -6,7 +6,7 @@
 
 ## 1. Acceptance
 
-By installing or using Tanniscoring (the “App”), including the phone and Wear OS companions under `com.tanniscoring.app`, you agree to these Terms of Use. If you do not agree, do not use the App.
+By installing or using SCORECORE (the “App”), including the phone and Wear OS companions under `com.tanniscoring.app`, you agree to these Terms of Use. If you do not agree, do not use the App.
 
 ## 2. License
 

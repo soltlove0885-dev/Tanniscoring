@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Tanniscoring</string>
+    <string name="app_name">SCORECORE</string>
     <string name="point_a">A</string>
     <string name="point_b">B</string>
     <string name="undo">Undo</string>
