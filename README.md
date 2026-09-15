@@ -6,7 +6,7 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 
 | | |
 |---|---|
-| Version | **1.5.5** (versionCode phone **37** / wear **38**) |
+| Version | **1.5.5** (versionCode phone **37** / wear **40**) |
 | applicationId (phone **and** wear) | `com.tanniscoring.app` |
 | minSdk | Phone 26 / Wear 30 |
 | UI | Jetpack Compose + Wear Compose (Korean / English) |
@@ -25,7 +25,7 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 - **Badminton**: rally to 21, win by 2, cap at 30; rally winner serves
 - **Reconnect**: refresh / re-request Wear state
 - Real-time sync via **MessageClient** + **WearableListenerService**
-- Same `applicationId` on phone + wear; phone embeds wear with `wearApp(project(":wear"))`
+- Same `applicationId` on phone + wear; Wear ships as a **separate Wear OS AAB** (no `wearApp` embed — embed duplicates wear versionCode on Play)
 
 ### 1.5.5
 
@@ -74,7 +74,7 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 ```
 :shared   Pure Kotlin — Tennis + Badminton engines, MatchState DTOs, Tournament, SyncJson
 :wear     Wear OS — scoring authority + MessageClient (applicationId = com.tanniscoring.app)
-:app      Phone — scoreboard + tournament + language/sport pickers + wearApp(:wear)
+:app      Phone — scoreboard + tournament + language/sport pickers (Wear via separate AAB)
 ```
 
 **Wear is the source of truth for scoring.** Phone owns tournament bracket + live scoreboard and can mirror POINT/UNDO to Wear.
@@ -90,7 +90,7 @@ GitHub: [`soltlove0885-dev/Tanniscoring`](https://github.com/soltlove0885-dev/Ta
 
 Packaged AABs:
 
-- `tanniscoring-app-vc35-1.5.5.aab`
-- `tanniscoring-wear-vc36-1.5.5.aab`
+- `tanniscoring-app-vc37-1.5.5.aab`
+- `tanniscoring-wear-vc40-1.5.5.aab`
 
 Packaged for `soltlove0885-dev/Tanniscoring`.

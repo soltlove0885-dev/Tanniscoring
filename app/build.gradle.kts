@@ -73,8 +73,8 @@ android {
 
 dependencies {
     implementation(project(":shared"))
-    // Classic companion: embed Wear APK inside phone AAB/APK (same applicationId).
-    wearApp(project(":wear"))
+    // Wear is distributed as a separate Wear OS AAB (Play Wear track), not embedded.
+    // wearApp() embed consumes the wear versionCode and causes Play to discard the standalone Wear AAB.
 
     val composeBom = platform("androidx.compose:compose-bom:2024.10.01")
     implementation(composeBom)
