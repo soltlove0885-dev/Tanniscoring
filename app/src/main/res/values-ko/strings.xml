@@ -29,17 +29,17 @@
     <string name="server_fmt">서브: %1$s</string>
     <string name="tap_to_toggle_server">탭하여 서버 변경</string>
     <string name="recent_matches">최근 경기</string>
-    <string name="waiting_for_wear">워치에서 경기를 시작하세요</string>
-    <string name="waiting_for_wear_hint">Galaxy Watch에서 「스코어코어」를 연 뒤 「경기 시작」을 누르면 이 화면이 실시간 스코어보드로 바뀝니다. 자동 설치가 안 되면 아래 「워치에 설치」를 사용하세요.</string>
+    <string name="waiting_for_wear">이 폰에서 바로 채점할 수 있습니다</string>
+    <string name="waiting_for_wear_hint">「경기 시작」을 누르면 워치 없이 폰에서 테니스 채점이 시작됩니다. 연결된 Wear OS 워치가 있으면 손목에서도 선택적으로 채점할 수 있습니다.</string>
     <string name="scoring_from_wear">워치 연동 · 폰에서도 득점 가능</string>
-    <string name="phone_mirror_hint">A/B 탭 = 득점 · 길게 = 되돌리기 (워치 동기화)</string>
+    <string name="phone_mirror_hint">A/B 탭 = 득점 · 길게 = 되돌리기 (워치 연결 시 동기화)</string>
     <string name="phone_score_hint">A/B 탭 = 득점 · 길게 = 되돌리기</string>
     <string name="refresh_wear_state">재연결</string>
-    <string name="sync_hint">워치가 채점 권한입니다. 동일 패키지(com.tanniscoring.app) MessageClient로 점수가 실시간 동기화됩니다.</string>
+    <string name="sync_hint">폰만으로 채점할 수 있습니다. 연결된 워치는 손목 채점용으로 선택 사항이며, 페어링되면 점수가 실시간 동기화됩니다.</string>
     <string name="wear_connected">워치 페어링됨</string>
     <string name="wear_disconnected">워치 미연결</string>
     <string name="wear_status_connected_fmt">워치 노드 %1$d개 연결됨</string>
-    <string name="wear_status_paired_hint">워치 페어링됨 · 「워치 앱 열기」또는 워치 런처에서 앱을 여세요</string>
+    <string name="wear_status_paired_hint">워치 페어링됨 · 「워치 앱 열기」로 손목 채점(선택)</string>
     <string name="wear_open_app">워치 앱 열기</string>
     <string name="wear_install_app">워치에 설치</string>
     <string name="wear_auto_install_hint">Galaxy Watch에서는 폰 설치 시 워치 앱 자동 설치가 자주 실패합니다. 「워치에 설치」버튼으로 워치 Play를 열거나, 워치 Play에서 「스코어코어」를 직접 설치하세요. 폰 Play에서는 「웨어러블에 설치」를 사용하세요.</string>
@@ -63,7 +63,7 @@
     <string name="tournament_bracket_title">토너먼트 · %1$d명</string>
     <string name="tournament_default_format">기본 형식: %1$s</string>
     <string name="tournament_champion">우승: %1$s</string>
-    <string name="tournament_bracket_hint">경기를 탭하면 워치로 득점을 시작합니다. 형식 칩을 탭하면 해당 경기만 1/3/5판으로 바꿀 수 있습니다.</string>
+    <string name="tournament_bracket_hint">경기를 탭하면 이 폰에서 채점이 시작됩니다(워치 선택). 형식 칩을 탭하면 해당 경기만 1/3/5판으로 바꿀 수 있습니다.</string>
     <string name="tournament_open_scoreboard">진행 중 스코어보드</string>
     <string name="tournament_end">토너먼트 종료</string>
     <string name="tournament_match_result">승자 %1$s · %2$d-%3$d</string>
@@ -92,8 +92,15 @@
     <string name="sport_tennis">테니스</string>
     <string name="sport_badminton">배드민턴</string>
     <string name="back_to_sports">종목 변경</string>
-    <string name="badminton_waiting">워치에서 배드민턴을 시작하세요</string>
-    <string name="badminton_waiting_hint">워치 앱에서 배드민턴을 고른 뒤 「경기 시작」을 누르면 점수가 실시간으로 동기화됩니다.</string>
+
+    <string name="phone_idle_title">이 폰에서 테니스 채점</string>
+    <string name="phone_idle_hint">언제든지 여기서 경기를 시작하세요. Wear OS 워치는 연결 시 손목 채점용으로 선택 사항입니다.</string>
+    <string name="phone_start_setup_hint">선수와 형식을 정한 뒤 시작하세요. 워치 없이도 이 폰에서 채점됩니다.</string>
+    <string name="wear_optional_hint">워치는 선택 사항 — 페어링하면 손목 채점, 폰만으로도 가능합니다.</string>
+    <string name="badminton_idle_title">이 폰에서 배드민턴 채점</string>
+    <string name="badminton_idle_hint">언제든지 여기서 경기를 시작하세요. Wear OS 워치는 연결 시 손목 채점용으로 선택 사항입니다.</string>
+    <string name="badminton_waiting">이 폰에서 배드민턴을 시작할 수 있습니다</string>
+    <string name="badminton_waiting_hint">「경기 시작」을 누르면 워치 없이 폰에서 채점합니다. 연결된 워치가 있으면 손목에서도 선택적으로 채점할 수 있습니다.</string>
     <string name="badminton_rules_hint">21점 랠리 · 2점 차 승 · 30점 캡</string>
     <string name="badminton_game_over">게임 종료</string>
     <string name="settings">설정</string>

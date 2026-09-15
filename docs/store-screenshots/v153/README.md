@@ -69,3 +69,19 @@ Version 1.5.5 (phone vc37 / wear vc40)
 - Do **not** upload these via this repo automation; upload manually in Play Console if needed.
 - Colors follow `app/.../ui/Theme.kt` and `wear/.../ui/WearTheme.kt`, not the launcher lime accent.
 - **Positioning memory:** do **not** claim glove / glove-friendly scoring — a normal screen tap is not glove-friendly without capacitive gloves or hardware buttons. Market as **score on watch or phone**; phone-only start/score supported; watch optional.
+
+## Suggested Play listing (KO + EN)
+
+Canonical files: `play-ready/listing-ko.txt`, `play-ready/listing-en.txt`
+
+### Short (KO)
+
+워치·폰 어디서든 채점 — 탭=득점·길게=취소
+
+### Short (EN)
+
+Score on watch or phone — tap=point · long-press=undo
+
+### Notes
+
+Phone can start/score alone; watch optional. Version **1.5.6** (phone vc41 / wear vc42).

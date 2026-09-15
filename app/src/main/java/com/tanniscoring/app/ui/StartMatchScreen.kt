@@ -12,15 +12,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,11 +29,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.tanniscoring.app.R
-import com.tanniscoring.shared.MatchHistoryEntry
-import com.tanniscoring.shared.MatchMode
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,20 +37,29 @@ fun StartMatchScreen(
     playerB: String,
     bestOf: Int,
     doubles: Boolean,
-    history: List<MatchHistoryEntry>,
+    noAd: Boolean,
     wearConnected: Boolean = false,
     wearNodeCount: Int = 0,
     onPlayerAChange: (String) -> Unit,
     onPlayerBChange: (String) -> Unit,
     onBestOfChange: (Int) -> Unit,
     onDoublesChange: (Boolean) -> Unit,
+    onNoAdChange: (Boolean) -> Unit,
     onStart: () -> Unit,
+    onCancel: () -> Unit,
     onOpenWearApp: () -> Unit = {},
     onInstallWearApp: () -> Unit = {},
 ) {
     Scaffold(
+        containerColor = CourtColors.Black,
         topBar = {
-            TopAppBar(title = { Text(stringResource(R.string.app_name)) })
+            TopAppBar(
+                title = { Text(stringResource(R.string.start_match)) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = CourtColors.NearBlack,
+                    titleContentColor = CourtColors.TextPrimary,
+                ),
+            )
         },
     ) { padding ->
         Column(
@@ -67,8 +72,9 @@ fun StartMatchScreen(
         ) {
             Spacer(Modifier.height(8.dp))
             Text(
-                text = stringResource(R.string.start_match),
-                style = MaterialTheme.typography.headlineSmall,
+                text = stringResource(R.string.phone_start_setup_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             Text(
@@ -124,12 +130,42 @@ fun StartMatchScreen(
                 selected = bestOf == 5,
                 onClick = { onBestOfChange(5) },
             )
+
+            Text(
+                text = stringResource(R.string.no_ad_title),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                    Text(
+                        text = stringResource(R.string.no_ad_label),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Text(
+                        text = stringResource(R.string.no_ad_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(checked = noAd, onCheckedChange = onNoAdChange)
+            }
+
             Spacer(Modifier.height(4.dp))
             Button(
                 onClick = onStart,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.start_match))
+            }
+            OutlinedButton(
+                onClick = onCancel,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.cancel))
             }
             Text(
                 text = stringResource(R.string.sync_hint),
@@ -158,59 +194,14 @@ fun StartMatchScreen(
             ) {
                 Text(stringResource(R.string.wear_open_app))
             }
-            Button(
+            OutlinedButton(
                 onClick = onInstallWearApp,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.wear_install_app))
             }
-            Text(
-                text = stringResource(R.string.wear_auto_install_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (history.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
-                HorizontalDivider()
-                Text(
-                    text = stringResource(R.string.recent_matches),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                history.take(10).forEach { entry ->
-                    HistoryRow(entry)
-                }
-            }
             Spacer(Modifier.height(24.dp))
         }
-    }
-}
-
-@Composable
-private fun HistoryRow(entry: MatchHistoryEntry) {
-    val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-    val whenText = fmt.format(Date(entry.finishedAtEpochMs))
-    val modeLabel = if (entry.mode == MatchMode.DOUBLES.name) {
-        stringResource(R.string.doubles)
-    } else {
-        stringResource(R.string.singles)
-    }
-    val sets = entry.setHistory.joinToString(" ") { "${it.gamesA}-${it.gamesB}" }
-        .ifBlank { "${entry.setsA}-${entry.setsB}" }
-    val winner = when (entry.winner) {
-        "A" -> entry.playerA
-        "B" -> entry.playerB
-        else -> "-"
-    }
-    Column(modifier = Modifier.padding(vertical = 6.dp)) {
-        Text(
-            text = "${entry.playerA} vs ${entry.playerB}",
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Text(
-            text = "$whenText · $modeLabel · $sets · ${stringResource(R.string.winner_fmt, winner)}",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }
 

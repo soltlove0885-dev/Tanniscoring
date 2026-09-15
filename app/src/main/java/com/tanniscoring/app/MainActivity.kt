@@ -20,6 +20,7 @@ import com.tanniscoring.app.ui.MatchScreen
 import com.tanniscoring.app.ui.ScoreboardIdleScreen
 import com.tanniscoring.app.ui.SettingsScreen
 import com.tanniscoring.app.ui.SportPickerScreen
+import com.tanniscoring.app.ui.StartMatchScreen
 import com.tanniscoring.app.ui.TermsOfUseScreen
 import com.tanniscoring.app.ui.TanniscoringTheme
 import com.tanniscoring.app.ui.TournamentBracketScreen
@@ -68,7 +69,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         ui.screen == PhoneScreen.SETTINGS -> {
                             SettingsScreen(
-                                versionName = "1.5.3",
+                                versionName = "1.5.6",
                                 onTermsOfUse = { viewModel.showTermsOfUse() },
                                 onChangeLanguage = { viewModel.showLanguagePicker() },
                                 onBack = { viewModel.closeSettings() },
@@ -112,6 +113,26 @@ class MainActivity : AppCompatActivity() {
                                 onBack = { viewModel.showIdle() },
                             )
                         }
+                        ui.screen == PhoneScreen.START_MATCH -> {
+                            StartMatchScreen(
+                                playerA = ui.draftPlayerA,
+                                playerB = ui.draftPlayerB,
+                                bestOf = ui.draftBestOf,
+                                doubles = ui.draftDoubles,
+                                noAd = ui.draftNoAd,
+                                wearConnected = ui.wearConnected,
+                                wearNodeCount = ui.wearNodeCount,
+                                onPlayerAChange = viewModel::setDraftPlayerA,
+                                onPlayerBChange = viewModel::setDraftPlayerB,
+                                onBestOfChange = viewModel::setMatchDraftBestOf,
+                                onDoublesChange = viewModel::setDraftDoubles,
+                                onNoAdChange = viewModel::setDraftNoAd,
+                                onStart = { viewModel.startPhoneTennisMatch() },
+                                onCancel = { viewModel.cancelStartMatchSetup() },
+                                onOpenWearApp = { viewModel.openWearApp(this@MainActivity) },
+                                onInstallWearApp = { viewModel.openWearCompanionStore(this@MainActivity) },
+                            )
+                        }
                         ui.screen == PhoneScreen.BADMINTON_SCOREBOARD &&
                             ui.matchStarted && ui.badmintonState != null -> {
                             BadmintonMatchScreen(
@@ -147,6 +168,7 @@ class MainActivity : AppCompatActivity() {
                             BadmintonIdleScreen(
                                 wearConnected = ui.wearConnected,
                                 wearNodeCount = ui.wearNodeCount,
+                                onStartMatch = { viewModel.startPhoneBadmintonMatch() },
                                 onRequestState = { viewModel.requestWearState() },
                                 onOpenWearApp = { viewModel.openWearApp(this@MainActivity) },
                                 onInstallWearApp = { viewModel.openWearCompanionStore(this@MainActivity) },
@@ -161,6 +183,7 @@ class MainActivity : AppCompatActivity() {
                                 wearConnected = ui.wearConnected,
                                 wearNodeCount = ui.wearNodeCount,
                                 hasTournament = ui.tournament != null,
+                                onStartMatch = { viewModel.openStartMatchSetup() },
                                 onRequestState = { viewModel.requestWearState() },
                                 onOpenWearApp = { viewModel.openWearApp(this@MainActivity) },
                                 onInstallWearApp = { viewModel.openWearCompanionStore(this@MainActivity) },

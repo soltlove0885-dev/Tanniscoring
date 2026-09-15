@@ -29,17 +29,17 @@
     <string name="server_fmt">Serve: %1$s</string>
     <string name="tap_to_toggle_server">Tap to change server</string>
     <string name="recent_matches">Recent matches</string>
-    <string name="waiting_for_wear">Start the match on your watch</string>
-    <string name="waiting_for_wear_hint">Open 「SCORECORE」 on your Galaxy Watch and tap 「Start match」. This screen becomes a live scoreboard. If auto-install failed, use 「Install on watch」 below.</string>
+    <string name="waiting_for_wear">Ready to score on this phone</string>
+    <string name="waiting_for_wear_hint">Tap 「Start match」 to score tennis here — no watch required. A paired Wear OS watch can optionally score from the wrist.</string>
     <string name="scoring_from_wear">Synced with watch · phone can score too</string>
-    <string name="phone_mirror_hint">Tap A/B = point · Long-press = undo (synced to watch)</string>
+    <string name="phone_mirror_hint">Tap A/B = point · Long-press = undo (synced when watch is connected)</string>
     <string name="phone_score_hint">Tap A/B = point · Long-press = undo</string>
     <string name="refresh_wear_state">Reconnect</string>
-    <string name="sync_hint">The watch owns scoring. Scores sync in real time via MessageClient (same package com.tanniscoring.app).</string>
+    <string name="sync_hint">Phone can score alone. A connected watch is optional for wrist scoring; scores sync in real time when paired.</string>
     <string name="wear_connected">Watch paired</string>
     <string name="wear_disconnected">Watch not connected</string>
     <string name="wear_status_connected_fmt">%1$d watch node(s) connected</string>
-    <string name="wear_status_paired_hint">Watch paired · use 「Open watch app」 or launch from the watch</string>
+    <string name="wear_status_paired_hint">Watch paired · optional wrist scoring via 「Open watch app」</string>
     <string name="wear_open_app">Open watch app</string>
     <string name="wear_install_app">Install on watch</string>
     <string name="wear_auto_install_hint">On Galaxy Watch, phone install often does not auto-install the wear app. Use 「Install on watch」 or install 「SCORECORE」 from watch Play. On phone Play use 「Install on Wear OS」.</string>
@@ -63,7 +63,7 @@
     <string name="tournament_bracket_title">Tournament · %1$d players</string>
     <string name="tournament_default_format">Default: %1$s</string>
     <string name="tournament_champion">Champion: %1$s</string>
-    <string name="tournament_bracket_hint">Tap a match to start scoring on the watch. Tap the format chip to set that match to best of 1/3/5.</string>
+    <string name="tournament_bracket_hint">Tap a match to start scoring on this phone (watch optional). Tap the format chip to set that match to best of 1/3/5.</string>
     <string name="tournament_open_scoreboard">Live scoreboard</string>
     <string name="tournament_end">End tournament</string>
     <string name="tournament_match_result">Winner %1$s · %2$d-%3$d</string>
@@ -91,8 +91,15 @@
     <string name="sport_tennis">Tennis</string>
     <string name="sport_badminton">Badminton</string>
     <string name="back_to_sports">Change sport</string>
-    <string name="badminton_waiting">Start badminton on your watch</string>
-    <string name="badminton_waiting_hint">Open the watch app, choose Badminton, then Start. Scores sync here in real time.</string>
+
+    <string name="phone_idle_title">Score tennis on this phone</string>
+    <string name="phone_idle_hint">Start a match here anytime. A Wear OS watch is optional for wrist scoring when connected.</string>
+    <string name="phone_start_setup_hint">Set players and format, then start. Scoring works on this phone with or without a watch.</string>
+    <string name="wear_optional_hint">Watch optional — pair for wrist scoring; phone works alone.</string>
+    <string name="badminton_idle_title">Score badminton on this phone</string>
+    <string name="badminton_idle_hint">Start a match here anytime. A Wear OS watch is optional for wrist scoring when connected.</string>
+    <string name="badminton_waiting">Ready for badminton on this phone</string>
+    <string name="badminton_waiting_hint">Tap 「Start match」 to score here — no watch required. A paired watch can optionally score from the wrist.</string>
     <string name="badminton_rules_hint">Rally to 21, win by 2 · game ends at 30</string>
     <string name="badminton_game_over">Game over</string>
     <string name="settings">Settings</string>

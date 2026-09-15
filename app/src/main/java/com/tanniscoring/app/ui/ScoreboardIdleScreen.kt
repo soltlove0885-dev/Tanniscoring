@@ -38,6 +38,7 @@ fun ScoreboardIdleScreen(
     wearConnected: Boolean,
     wearNodeCount: Int,
     hasTournament: Boolean = false,
+    onStartMatch: () -> Unit,
     onRequestState: () -> Unit,
     onOpenWearApp: () -> Unit,
     onInstallWearApp: () -> Unit,
@@ -70,18 +71,24 @@ fun ScoreboardIdleScreen(
         ) {
             Spacer(Modifier.height(24.dp))
             Text(
-                text = stringResource(R.string.waiting_for_wear),
+                text = stringResource(R.string.phone_idle_title),
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
             )
             Text(
-                text = stringResource(R.string.waiting_for_wear_hint),
+                text = stringResource(R.string.phone_idle_hint),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(8.dp))
             Button(
+                onClick = onStartMatch,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.start_match))
+            }
+            OutlinedButton(
                 onClick = onTournament,
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -95,6 +102,12 @@ fun ScoreboardIdleScreen(
                     Text(stringResource(R.string.tournament_resume))
                 }
             }
+            Text(
+                text = stringResource(R.string.wear_optional_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
             Text(
                 text = if (wearConnected) {
                     stringResource(R.string.wear_status_paired_hint)
@@ -124,7 +137,7 @@ fun ScoreboardIdleScreen(
             ) {
                 Text(stringResource(R.string.wear_open_app))
             }
-            Button(
+            OutlinedButton(
                 onClick = onInstallWearApp,
                 modifier = Modifier.fillMaxWidth(),
             ) {

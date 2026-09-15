@@ -30,6 +30,7 @@ import com.tanniscoring.app.R
 fun BadmintonIdleScreen(
     wearConnected: Boolean,
     wearNodeCount: Int,
+    onStartMatch: () -> Unit,
     onRequestState: () -> Unit,
     onOpenWearApp: () -> Unit,
     onInstallWearApp: () -> Unit,
@@ -60,12 +61,12 @@ fun BadmintonIdleScreen(
         ) {
             Spacer(Modifier.height(24.dp))
             Text(
-                text = stringResource(R.string.badminton_waiting),
+                text = stringResource(R.string.badminton_idle_title),
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
             )
             Text(
-                text = stringResource(R.string.badminton_waiting_hint),
+                text = stringResource(R.string.badminton_idle_hint),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -74,6 +75,19 @@ fun BadmintonIdleScreen(
                 text = stringResource(R.string.badminton_rules_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = CourtColors.Accent,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(8.dp))
+            Button(
+                onClick = onStartMatch,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.start_match))
+            }
+            Text(
+                text = stringResource(R.string.wear_optional_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
             Text(
@@ -99,7 +113,7 @@ fun BadmintonIdleScreen(
             OutlinedButton(onClick = onOpenWearApp, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.wear_open_app))
             }
-            Button(onClick = onInstallWearApp, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(onClick = onInstallWearApp, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.wear_install_app))
             }
             OutlinedButton(onClick = onBackToSports, modifier = Modifier.fillMaxWidth()) {

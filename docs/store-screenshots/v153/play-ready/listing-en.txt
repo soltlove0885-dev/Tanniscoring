@@ -1,15 +1,15 @@
-SHORT: Score on watch or phone — tap=point, long-press=undo
+SHORT: Score on watch or phone — tap=point · long-press=undo
 
 FULL:
-SCORECORE is a tennis & badminton scoring app for Wear OS (Galaxy Watch and more) and phone.
+SCORECORE is a tennis & badminton scoring app for phone and Wear OS (Galaxy Watch and more).
 
-• Score on the watch or phone: tap = point, long-press = undo
-• Phone can start and score matches alone — watch is optional
-• Optional watch sync; phone doubles as live scoreboard when paired
-• Tennis (including No-Ad) + badminton (rally to 21) in one app
+• Start and score matches on the phone alone — no watch required
+• Score anywhere on watch or phone: tap = point, long-press = undo
+• Optional real-time sync when a watch is paired — MessageClient
+• Tennis (including No-Ad) + badminton (21-point rally) in one app
 • Korean / English from first launch
 • 4- and 8-player single-elim tournament brackets (phone)
 
 No ads SDK, no analytics SDK. Contact: soltlove0885@gmail.com
 
-Version 1.5.5 (phone vc37 / wear vc40)
+Version 1.5.6 (phone vc41 / wear vc42)
